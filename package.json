@@ -4,7 +4,7 @@
   "description": "Cross-asset correlation engine with pairs trading backtesting",
   "type": "module",
   "scripts": {
-    "start": "node server.mjs",
+    "start": "node deploy.mjs",
     "deploy": "node deploy.mjs",
     "trade": "node trade-engine.mjs",
     "monitor": "node live-monitor.mjs",
