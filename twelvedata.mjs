@@ -5,7 +5,7 @@
 // ──────────────────────────────────────────────────
 
 const TD = 'https://api.twelvedata.com';
-const API_KEY = 'bb21d50e60f749579ad37fb98e5bedb3';
+const API_KEY = process.env.TWELVEDATA_API_KEY || 'bb21d50e60f749579ad37fb98e5bedb3';
 const BINANCE = 'https://api.binance.com/api/v3';
 
 // ─── Asset Mapping ─────────────────────────────

@@ -31,8 +31,8 @@ function loadEnv() {
     }
   } catch (_) {}
   return {
-    telegramToken: cfg.TELEGRAM_TOKEN || '',
-    telegramChatId: cfg.TELEGRAM_CHAT_ID || '',
+    telegramToken: cfg.TELEGRAM_TOKEN || process.env.TELEGRAM_TOKEN || '',
+    telegramChatId: cfg.TELEGRAM_CHAT_ID || process.env.TELEGRAM_CHAT_ID || '',
   };
 }
 
@@ -40,13 +40,17 @@ const cfg = loadEnv();
 
 // ─── Telegram Alert ───────────────────────────
 async function sendAlert(message, priority = 'normal') {
-  if (!cfg.telegramToken || !cfg.telegramChatId) return;
+  if (!cfg.telegramToken || !cfg.telegramChatId) {
+    console.error('[ALERT] Telegram not configured — set TELEGRAM_TOKEN and TELEGRAM_CHAT_ID env vars');
+    return;
+  }
   try {
     const prefix = priority === 'high' ? '🔴 ' : priority === 'medium' ? '🟡 ' : '🟢 ';
     const text = encodeURIComponent(`${prefix}${message}`);
     const url = `https://api.telegram.org/bot${cfg.telegramToken}/sendMessage?chat_id=${cfg.telegramChatId}&text=${text}`;
-    await fetch(url);
-  } catch (_) {}
+    const res = await fetch(url);
+    if (!res.ok) console.error(`[ALERT] Telegram API error ${res.status}: ${await res.text()}`);
+  } catch (e) { console.error(`[ALERT] send failed: ${e.message}`); }
 }
 
 // ─── Public Tunnel via localhost.run ──────────
@@ -115,17 +119,20 @@ function startEngine() {
 function rustCall(action, data) {
   return new Promise((resolve, reject) => {
     if (!engine || !ready) {
-      const p = spawn('./rust-engine/target/release/modern_engine', [], { cwd: __dirname, stdio: ['pipe', 'pipe', 'pipe'] });
-      let o = '', e = '';
-      p.stdout.on('data', d => o += d);
-      p.stderr.on('data', d => e += d);
-      p.on('close', () => {
-        try {
-          const lines = o.trim().split('\n').filter(l => l.trim());
-          resolve(JSON.parse(lines[lines.length - 1]));
-        } catch (_) { reject(new Error(e || 'parse error')); }
-      });
-      p.stdin.end(JSON.stringify({ action, data }) + '\n');
+      try {
+        const p = spawn('./rust-engine/target/release/modern_engine', [], { cwd: __dirname, stdio: ['pipe', 'pipe', 'pipe'] });
+        let o = '', e = '';
+        p.stdout.on('data', d => o += d);
+        p.stderr.on('data', d => e += d);
+        p.on('close', () => {
+          try {
+            const lines = o.trim().split('\n').filter(l => l.trim());
+            resolve(JSON.parse(lines[lines.length - 1]));
+          } catch (_) { reject(new Error(e || 'parse error')); }
+        });
+        p.on('error', err => reject(err));
+        p.stdin.end(JSON.stringify({ action, data }) + '\n');
+      } catch (e) { reject(new Error('rust engine unavailable')); }
       return;
     }
     pending.push({ resolve, reject });
@@ -161,15 +168,17 @@ app.get('/api/analyze/:pair', async (req, res) => {
     const [klines, book, trades] = await Promise.all([
       fetchKlines(pair, interval, limit), fetchBook(pair, 50), fetchTrades(pair, 100),
     ]);
-    if (klines.length < 20) return res.status(400).json({ error: 'insufficient data' });
+    if (!klines || klines.length < 20) return res.status(400).json({ error: 'insufficient data' });
     const price = klines[klines.length - 1].c;
     const closes = klines.map(k => k.c);
     const highs = klines.map(k => k.h);
     const lows = klines.map(k => k.l);
     const volumes = klines.map(k => k.v);
     const start = Date.now();
+    const bids = book?.bids || [];
+    const asks = book?.asks || [];
     const [orderflow, regimes, features, bayesian] = await Promise.all([
-      rustCall('orderflow', { trades, book_bids: book.bids, book_asks: book.asks, klines, price }),
+      rustCall('orderflow', { trades: trades || [], book_bids: bids, book_asks: asks, klines, price }),
       rustCall('regimes', { closes, highs, lows, volumes, num_regimes: 3 }),
       rustCall('features', { closes, highs, lows, volumes }),
       rustCall('bayesian', { closes, price, targets: [], horizon_hours: 24 }),
@@ -183,7 +192,7 @@ app.get('/api/orderflow/:pair', async (req, res) => {
   const pair = req.params.pair.toUpperCase();
   const [klines, book, trades] = await Promise.all([fetchKlines(pair, '1h', 100), fetchBook(pair, 50), fetchTrades(pair, 100)]);
   const price = klines.length > 0 ? klines[klines.length - 1].c : 0;
-  const result = await rustCall('orderflow', { trades, book_bids: book.bids, book_asks: book.asks, klines, price });
+  const result = await rustCall('orderflow', { trades: trades || [], book_bids: book?.bids || [], book_asks: book?.asks || [], klines, price });
   res.json({ pair, price, ...result.orderflow });
 });
 
