@@ -9,6 +9,7 @@ import { fetchKlines, fetchTicker } from './twelvedata.mjs';
 import { fetchFearGreed, getFgScore } from './sentiment.mjs';
 import { fetchAllOnchain, formatOnchainAlert } from './coinglass.mjs';
 import { fetchAllSentiment } from './finnhub.mjs';
+import { predictMove } from './predict.mjs';
 
 function round(n, d = 2) { return Math.round(n * 10 ** d) / 10 ** d; }
 
@@ -138,12 +139,12 @@ export async function computeUnifiedSignal(symbol, externalData = {}) {
       const nearestResist = near.filter(n => n.side === 'resistance')[0];
 
       // Closer to strong support → bullish bias
-      if (nearestSupport && Math.abs(nearestSupport.distPct) < 2) {
-        structScore += nearestSupport.strength * 5;
+      if (nearestSupport && Math.abs(nearestSupport.distPct) < 2 && !isNaN(nearestSupport.strength)) {
+        structScore += (nearestSupport.strength || 0) * 5;
       }
       // Closer to strong resistance → bearish bias
-      if (nearestResist && nearestResist.distPct < 2) {
-        structScore -= nearestResist.strength * 5;
+      if (nearestResist && nearestResist.distPct < 2 && !isNaN(nearestResist.strength)) {
+        structScore -= (nearestResist.strength || 0) * 5;
       }
     }
 
@@ -220,6 +221,19 @@ export async function computeUnifiedSignal(symbol, externalData = {}) {
     }
 
     summary += `| RSI:${round(lastRSI, 1)} | Vol:${round(volRatio, 1)}x | Flow:${flowImb > 0 ? '+' : ''}${round(flowImb, 1)}%`;
+
+    // Add prediction one-liner
+    try {
+      const prediction = await predictMove(symbol, 24);
+      if (prediction.summary) {
+        const predLine = `\n▶ ${prediction.direction} ↑${prediction.probUp}% | ${prediction.expectedPct > 0 ? '+' : ''}${prediction.expectedPct}% | 68%: $${round(prediction.mc.ci68.low, 0)}-$${round(prediction.mc.ci68.high, 0)} | ${prediction.confidence}`;
+        const existingSummary = summary;
+        // Insert prediction after range/odds line
+        const lines = existingSummary.split('\n');
+        lines.splice(lines.length - 1, 0, predLine);
+        summary = lines.join('\n');
+      }
+    } catch (_) {}
 
     // Add sentiment/FG one-liner if available
     if (sentiScore > 10) summary += ` | FG:FEAR⬆`;
