@@ -6,3 +6,4 @@ alerts.log
 __pycache__/
 rust-engine/target/
 .DS_Store
+logs.*.log
