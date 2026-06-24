@@ -5,7 +5,9 @@
 // ──────────────────────────────────────────────────
 
 import { computeEdgeLevels, isNearEdgeLevel } from './edge-levels.mjs';
-import { fetchKlines, fetchTicker } from './twelvedata.mjs';\n\nfunction round(n, d = 2) { return Math.round(n * 10 ** d) / 10 ** d; }
+import { fetchKlines, fetchTicker } from './twelvedata.mjs';
+
+function round(n, d = 2) { return Math.round(n * 10 ** d) / 10 ** d; }
 
 // ─── MAIN: Unified Signal Model ────────────────
 export async function computeUnifiedSignal(symbol, externalData = {}) {
