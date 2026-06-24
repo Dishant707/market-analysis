@@ -50,6 +50,9 @@ async function sendAlert(message, priority = 'normal') {
 
 // ─── Public Tunnel via localhost.run ──────────
 async function startTunnel() {
+  // Skip SSH tunnel on cloud platforms (Railway, Render) — they provide URLs
+  if (process.env.RAILWAY_SERVICE_ID || process.env.RENDER) return null;
+
   return new Promise((resolve) => {
     const ssh = spawn('ssh', [
       '-o', 'StrictHostKeyChecking=no',
@@ -80,8 +83,13 @@ async function startTunnel() {
 let engine = null, buf = '', pending = [], ready = false;
 
 function startEngine() {
-  if (engine) return;
-  engine = spawn('./rust-engine/target/release/modern_engine', [], { cwd: __dirname, stdio: ['pipe', 'pipe', 'pipe'] });
+  try {
+    if (engine) return;
+    if (!fs.existsSync('./rust-engine/target/release/modern_engine')) {
+      console.log('  Engine binary not found — running without Rust analysis');
+      return;
+    }
+    engine = spawn('./rust-engine/target/release/modern_engine', [], { cwd: __dirname, stdio: ['pipe', 'pipe', 'pipe'] });
   buf = ''; ready = false;
   engine.stdout.on('data', d => {
     buf += d.toString();
