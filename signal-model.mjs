@@ -6,8 +6,43 @@
 
 import { computeEdgeLevels, isNearEdgeLevel } from './edge-levels.mjs';
 import { fetchKlines, fetchTicker } from './twelvedata.mjs';
+import { fetchFearGreed, getFgScore } from './sentiment.mjs';
+import { fetchAllOnchain, formatOnchainAlert } from './coinglass.mjs';
 
 function round(n, d = 2) { return Math.round(n * 10 ** d) / 10 ** d; }
+
+function calcEMA(data, period) {
+  const r = []; const mult = 2 / (period + 1);
+  let prev = data.slice(0, period).reduce((a, b) => a + b, 0) / period;
+  for (let i = 0; i < data.length; i++) {
+    if (i < period - 1) { r.push(null); continue; }
+    if (i === period - 1) { r.push(prev); continue; }
+    prev = (data[i] - prev) * mult + prev; r.push(prev);
+  }
+  return r;
+}
+
+function calcRSI(data, period = 14) {
+  const r = []; let avgG = 0, avgL = 0;
+  for (let i = 0; i < data.length; i++) {
+    if (i < period) { r.push(null); continue; }
+    if (i === period) {
+      let g = 0, l = 0;
+      for (let j = i - period + 1; j <= i; j++) {
+        const d = data[j] - data[j - 1];
+        if (d > 0) g += d; else l -= d;
+      }
+      avgG = g / period; avgL = l / period;
+    } else {
+      const d = data[i] - data[i - 1];
+      avgG = ((avgG * (period - 1)) + (d > 0 ? d : 0)) / period;
+      avgL = ((avgL * (period - 1)) + (d < 0 ? -d : 0)) / period;
+    }
+    if (avgL === 0) { r.push(100); continue; }
+    r.push(100 - 100 / (1 + avgG / avgL));
+  }
+  return r;
+}
 
 // ─── MAIN: Unified Signal Model ────────────────
 export async function computeUnifiedSignal(symbol, externalData = {}) {
@@ -126,12 +161,24 @@ export async function computeUnifiedSignal(symbol, externalData = {}) {
 
     structScore = Math.max(-100, Math.min(100, structScore));
 
-    // ─── 5. WEIGHTED COMPOSITE ─────────────────
+    // ─── 5. SENTIMENT / ON-CHAIN (10%) ─────────
+    let sentiScore = 0;
+    try {
+      const [fg, onchain] = await Promise.allSettled([
+        fetchFearGreed(),
+        fetchAllOnchain('BTCUSDT'),
+      ]);
+      if (fg.status === 'fulfilled' && fg.value) sentiScore += getFgScore(fg.value.value);
+      if (onchain.status === 'fulfilled' && onchain.value) sentiScore += (onchain.value.compositeScore || 0);
+    } catch (_) {}
+
+    // ─── 6. WEIGHTED COMPOSITE ─────────────────
     const composite = round(
-      techScore * 0.40 +
-      probScore * 0.25 +
+      techScore * 0.35 +
+      probScore * 0.20 +
       flowScore * 0.15 +
-      structScore * 0.20, 1
+      structScore * 0.20 +
+      sentiScore * 0.10, 1
     );
 
     // Signal classification
@@ -170,6 +217,12 @@ export async function computeUnifiedSignal(symbol, externalData = {}) {
     }
 
     summary += `| RSI:${round(lastRSI, 1)} | Vol:${round(volRatio, 1)}x | Flow:${flowImb > 0 ? '+' : ''}${round(flowImb, 1)}%`;
+
+    // Add sentiment/FG one-liner if available
+    if (sentiScore > 10) summary += ` | FG:FEAR⬆`;
+    else if (sentiScore > 5) summary += ` | FG:FEAR`;
+    else if (sentiScore < -10) summary += ` | FG:GREED⬇`;
+    else if (sentiScore < -5) summary += ` | FG:GREED`;
 
     // Action
     if (signal !== 'NEUTRAL') {
