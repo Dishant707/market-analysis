@@ -1,0 +1,8 @@
+node_modules/
+.env
+.kilo/
+alerts.log
+*.pyc
+__pycache__/
+rust-engine/target/
+.DS_Store

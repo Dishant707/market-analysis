@@ -1,0 +1,21 @@
+{
+  "name": "correlation-engine",
+  "version": "2.0.0",
+  "description": "Cross-asset correlation engine with pairs trading backtesting",
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs",
+    "deploy": "node deploy.mjs",
+    "trade": "node trade-engine.mjs",
+    "monitor": "node live-monitor.mjs",
+    "analyze": "node analyze.mjs",
+    "depth": "node depth.mjs",
+    "ml": "python3 analysis/weekly_ml.py",
+    "build:rust": "cd rust-engine && cargo build --release"
+  },
+  "dependencies": {
+    "@ngrok/ngrok": "^1.7.0",
+    "express": "^5.2.1",
+    "ws": "^8.18.0"
+  }
+}

@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crypto & Gold · Visual Analysis</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a0f;color:#c8c8d4;font-family:'SF Mono','Fira Code',monospace;padding:16px}
+.hdr{display:flex;align-items:center;gap:12px;margin-bottom:16px;padding:12px 16px;background:#12121a;border:1px solid #2a2a3a;border-radius:10px;flex-wrap:wrap}
+.hdr h1{font-size:16px;color:#e0e0ee}
+.hdr .ts{font-size:10px;color:#6a6a7a;margin-left:auto}
+.grid{display:grid;gap:10px;margin-bottom:12px}
+.g2{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:1fr 1fr 1fr}
+.g4{grid-template-columns:1fr 1fr}
+@media(max-width:900px){.g2,.g3,.g4{grid-template-columns:1fr}}
+.card{background:#12121a;border:1px solid #2a2a3a;border-radius:10px;padding:12px}
+.card h3{font-size:11px;color:#6a6a7a;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.card h2{font-size:14px;margin-bottom:6px;display:flex;justify-content:space-between}
+canvas{width:100%!important;max-height:200px}
+.price{font-size:28px;font-weight:700}
+.up{color:#26a69a}.down{color:#ef5350}
+.l{font-size:8px;color:#6a6a7a;text-transform:uppercase;letter-spacing:.3px;margin-top:4px}
+.v{font-size:10px;margin:1px 0}
+.r{display:flex;justify-content:space-between;padding:2px 0;font-size:10px;border-bottom:1px solid #0f0f18}
+.bdg{display:inline-block;padding:1px 6px;border-radius:3px;font-size:9px;font-weight:600}
+.bdg.buy{background:#1b3a2a;color:#26a69a}.bdg.sell{background:#3a1b1b;color:#ef5350}.bdg.warn{background:#2a2a1b;color:#f0c040}
+.lvl-bar{height:4px;border-radius:2px;margin:4px 0;display:flex;overflow:hidden}
+.lvl-fill{height:100%;border-radius:2px}
+.signals{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+.sig{font-size:8px;padding:2px 8px;border-radius:4px;font-weight:600}
+.sig.bull{background:#1b3a2a;color:#26a69a;border:1px solid #26a69a33}
+.sig.bear{background:#3a1b1b;color:#ef5350;border:1px solid #ef535033}
+.sig.neu{background:#1a1a28;color:#f0c040;border:1px solid #f0c04033}
+.fib-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;margin-top:4px}
+.fib-item{text-align:center;padding:3px;background:#0f0f18;border-radius:4px;font-size:9px}
+.fib-item .f-lbl{font-size:7px;color:#6a6a7a}
+.fib-item .f-val{font-weight:600}
+.fib-item.current{border:1px solid #f0c040;background:#1a1a10}
+.ob-bar{margin:1px 0;position:relative;height:14px}
+.ob-fill{position:absolute;height:100%;border-radius:2px;opacity:.25}
+.ob-txt{position:relative;font-size:8px;display:flex;justify-content:space-between;padding:0 3px}
+.table{width:100%;border-collapse:collapse;font-size:9px}
+.table td{padding:3px 4px;border:1px solid #1a1a28;text-align:center}
+.footer{text-align:center;font-size:9px;color:#3a3a4a;margin-top:12px}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <h1>📊 Crypto & Gold · Visual Analysis</h1>
+  <span id="marketRegime" style="font-size:10px;"></span>
+  <span class="ts" id="updateTime">Loading...</span>
+  <button onclick="refresh()" style="margin-left:auto;background:#1a1a28;color:#c8c8d4;border:1px solid #3a3a4a;padding:4px 12px;border-radius:5px;cursor:pointer;font-family:inherit;font-size:10px">⟳ Refresh</button>
+</div>
+
+<div class="grid g2" id="mainGrid"></div>
+
+<div class="grid g4" id="chartGrid">
+  <div class="card"><h3>BTC · Price & S/R Levels</h3><canvas id="chart_btc"></canvas></div>
+  <div class="card"><h3>Gold (XAUT/PAXG) · Price & S/R Levels</h3><canvas id="chart_gold"></canvas></div>
+</div>
+
+<div class="grid g3" id="indicatorGrid"></div>
+
+<div class="card" style="margin-top:10px">
+  <div class="l">Cross-Asset Correlation Matrix</div>
+  <table class="table" id="corrTable"></table>
+</div>
+
+<div class="footer">Data from Binance · Real-time analysis</div>
+
+<script>
+const BINANCE = 'https://api.binance.com';
+const ASSETS = {
+  BTC: 'BTCUSDT', ETH: 'ETHUSDT', SOL: 'SOLUSDT',
+  XAUT: 'XAUTUSDT', PAXG: 'PAXGUSDT'
+};
+const STATE = {};
+
+async function fetchKlines(symbol, interval='1d', limit=200) {
+  const r = await fetch(`${BINANCE}/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`);
+  const d = await r.json();
+  return d.map(k => ({t:k[0],o:+k[1],h:+k[2],l:+k[3],c:+k[4],v:+k[5]}));
+}
+
+async function fetchBook(symbol) {
+  const r = await fetch(`${BINANCE}/api/v3/depth?symbol=${symbol}&limit=20`);
+  return await r.json();
+}
+
+async function fetchTicker(symbol) {
+  const r = await fetch(`${BINANCE}/api/v3/ticker/24hr?symbol=${symbol}`);
+  return await r.json();
+}
+
+function SMA(data, p) { const r=[];let s=0;for(let i=0;i<data.length;i++){s+=data[i];if(i>=p-1){r.push(s/p);s-=data[i-p+1]}else r.push(null)}return r }
+function EMA(data, p) { const r=[];const m=2/(p+1);let prev=data.slice(0,p).reduce((a,b)=>a+b,0)/p;for(let i=0;i<data.length;i++){if(i<p-1){r.push(null);continue}if(i===p-1){r.push(prev);continue}prev=(data[i]-prev)*m+prev;r.push(prev)}return r }
+function RSI(data, p=14) { const r=[];let g=0,l=0;for(let i=0;i<data.length;i++){if(i<p){r.push(null);continue}if(i===p){g=0,l=0;for(let j=i-p+1;j<=i;j++){const d=data[j]-data[j-1];if(d>0)g+=d;else l-=d}g/=p;l/=p}else{const d=data[i]-data[i-1];g=((g*(p-1))+(d>0?d:0))/p;l=((l*(p-1))+(d<0?-d:0))/p}r.push(l===0?100:100-100/(1+g/l))}return r }
+function MACD(data) { const e12=EMA(data,12),e26=EMA(data,26),m=[];for(let i=0;i<data.length;i++)m.push(e12[i]!==null&&e26[i]!==null?e12[i]-e26[i]:null);const vm=m.filter(v=>v!==null),se=EMA(vm,9);let si=0;const s=[],h=[];for(let i=0;i<m.length;i++){if(m[i]===null){s.push(null);h.push(null);continue}s.push(se[si]);h.push(m[i]-se[si]);si++}return {m,s,h} }
+function BB(data,p=20,std=2){const mid=SMA(data,p),u=[],l=[];for(let i=0;i<data.length;i++){if(mid[i]===null){u.push(null);l.push(null);continue}let sq=0;for(let j=i-p+1;j<=i;j++)sq+=(data[j]-mid[i])**2;const sd=Math.sqrt(sq/p);u.push(mid[i]+std*sd);l.push(mid[i]-std*sd)}return{u,mid,l}}
+function ATR(klines,p=14){const tr=[],r=[];for(let i=0;i<klines.length;i++){if(i===0){tr.push(klines[i].h-klines[i].l);continue}const hl=klines[i].h-klines[i].l,hc=Math.abs(klines[i].h-klines[i-1].c),lc=Math.abs(klines[i].l-klines[i-1].c);tr.push(Math.max(hl,hc,lc))}let prev=tr.slice(0,p).reduce((a,b)=>a+b,0)/p;for(let i=0;i<tr.length;i++){if(i<p-1){r.push(null);continue}if(i===p-1){r.push(prev);continue}prev=((prev*(p-1))+tr[i])/p;r.push(prev)}return r}
+function findSwings(klines,w=5){const hs=[],ls=[];for(let i=w;i<klines.length-w;i++){let ih=true,il=true;for(let j=i-w;j<=i+w;j++){if(j===i)continue;if(klines[j].h>=klines[i].h)ih=false;if(klines[j].l<=klines[i].l)il=false}if(ih)hs.push({p:klines[i].h});if(il)ls.push({p:klines[i].l})}return{hs,ls}}
+function Fib(hi,lo){const d=hi-lo;return{'0%':hi,'23.6%':hi-d*.236,'38.2%':hi-d*.382,'50%':hi-d*.5,'61.8%':hi-d*.618,'78.6%':hi-d*.786,'100%':lo}}
+
+async function analyzePair(symbol, name) {
+  const [klines, book, ticker] = await Promise.all([
+    fetchKlines(symbol, '1d', 200), fetchBook(symbol), fetchTicker(symbol)
+  ]);
+  const h1 = await fetchKlines(symbol, '1h', 168);
+  const closes = klines.map(k=>k.c);
+  const price = closes[closes.length-1];
+  const highs = klines.map(k=>k.h);
+  const lows = klines.map(k=>k.l);
+  const rsi = RSI(closes,14);
+  const macd = MACD(closes);
+  const bb = BB(closes);
+  const atr = ATR(klines);
+  const swings = findSwings(klines);
+  const fib = Fib(Math.max(...closes), Math.min(...closes));
+  const ema20 = EMA(closes,20);
+  const ema50 = EMA(closes,50);
+
+  const supps = swings.ls.slice(-5).filter(s=>s.p<price).sort((a,b)=>b.p-a.p).slice(0,3);
+  const reses = swings.hs.slice(-5).filter(s=>s.p>price).sort((a,b)=>a.p-b.p).slice(0,3);
+
+  const buyV = h1.slice(-24).filter(k=>k.c>=k.o).reduce((s,k)=>s+k.v,0);
+  const sellV = h1.slice(-24).filter(k=>k.c<k.o).reduce((s,k)=>s+k.v,0);
+  const buyRatio = buyV+sellV>0?buyV/(buyV+sellV)*100:50;
+
+  const bookBids = book.bids.map(b=>[+b[0],+b[1]]);
+  const bookAsks = book.asks.map(a=>[+a[0],+a[1]]);
+  const bidDepth = bookBids.slice(0,10).reduce((s,b)=>s+b[0]*b[1],0);
+  const askDepth = bookAsks.slice(0,10).reduce((s,a)=>s+a[0]*a[1],0);
+  const imb = bidDepth+askDepth>0?(bidDepth-askDepth)/(bidDepth+askDepth)*100:0;
+  const obCtrl = imb>5?'buyers':imb<-5?'sellers':'neutral';
+
+  const h1c = h1.map(k=>k.c);
+  const h1r = RSI(h1c,14);
+  const rsi1h = h1r[h1r.length-1];
+  const h1macd = MACD(h1c);
+  const h1hist = h1macd.h[h1macd.h.length-1];
+
+  return {
+    symbol, name, price, chg24h: +ticker.priceChangePercent,
+    high24h: +ticker.highPrice, low24h: +ticker.lowPrice,
+    vol24h: +ticker.quoteVolume,
+    rsi14: rsi[rsi.length-1], rsi1h,
+    macd: macd.m[macd.m.length-1], macdSig: macd.s[macd.s.length-1],
+    macdHist: macd.h[macd.h.length-1],
+    macd1h: h1macd.m[h1macd.m.length-1], macdHist1h: h1hist,
+    bbUpper: bb.u[bb.u.length-1], bbMid: bb.mid[bb.mid.length-1], bbLower: bb.l[bb.l.length-1],
+    atr: atr[atr.length-1],
+    ema20: ema20[ema20.length-1], ema50: ema50[ema50.length-1],
+    fib, supports: supps, resistances: reses,
+    buyRatio: buyRatio, obCtrl, imbalance: imb,
+    bookBids: bookBids.slice(0,5), bookAsks: bookAsks.slice(0,5),
+    bidDepth, askDepth,
+    allCloses: closes, allHighs: highs, allLows: lows,
+    h1Closes: h1c,
+    bb, rsiArr: rsi, macdArr: macd,
+  };
+}
+
+function format(n,d=2){return Number(n).toFixed(d)}
+function pctStr(v){return v>=0?`+${format(v)}%`:`${format(v)}%`}
+
+function renderAsset(a, idx) {
+  const pc = a.chg24h>=0?'up':'down';
+  const obc = a.obCtrl==='buyers'?'buy':a.obCtrl==='sellers'?'sell':'warn';
+  const rsiC = a.rsi14>70?'#ef5350':a.rsi14<30?'#26a69a':'#c8c8d4';
+  const rsiC1h = a.rsi1h>70?'#ef5350':a.rsi1h<30?'#26a69a':'#c8c8d4';
+  const macdC = a.macdHist>=0?'#26a69a':'#ef5350';
+  const macdC1h = a.macdHist1h>=0?'#26a69a':'#ef5350';
+
+  let score=0;
+  if(a.rsi14<30)score+=2;else if(a.rsi14>70)score-=2;
+  if(a.price>=a.ema20)score+=1;else score-=1;
+  if(a.price>=a.ema50)score+=1;else score-=1;
+  if(a.macdHist>0)score+=2;else score-=2;
+  const sig = score>=3?'STRONG BUY':score>=1?'BUY':score<=-3?'STRONG SELL':score<=-1?'SELL':'NEUTRAL';
+  const sigC = score>=1?'#26a69a':score<=-1?'#ef5350':'#f0c040';
+
+  const suppHtml = a.supports.map(s=>`<div class="r"><span style="color:#26a69a;">▴ $${format(s.p,0)}</span><span>${pctStr((s.p/a.price-1)*100)}</span></div>`).join('');
+  const resHtml = a.resistances.map(r=>`<div class="r"><span style="color:#ef5350;">▾ $${format(r.p,0)}</span><span>+${pctStr((r.p/a.price-1)*100)}</span></div>`).join('');
+
+  const maxQ = Math.max(...a.bookBids.map(b=>b[1]),...a.bookAsks.map(b=>b[1]),0.001);
+  const bidBars = a.bookBids.map(b=>{const p=Math.min(100,b[1]/maxQ*100);return `<div class="ob-bar"><div class="ob-fill" style="right:0;width:${p}%;background:#26a69a;"></div><div class="ob-txt"><span style="color:#26a69a;">${b[1].toFixed(4)}</span><span>$${b[0].toFixed(0)}</span></div></div>`}).join('');
+  const askBars = a.bookAsks.map(b=>{const p=Math.min(100,b[1]/maxQ*100);return `<div class="ob-bar"><div class="ob-fill" style="left:0;width:${p}%;background:#ef5350;"></div><div class="ob-txt"><span>$${b[0].toFixed(0)}</span><span style="color:#ef5350;">${b[1].toFixed(4)}</span></div></div>`}).join('');
+
+  const fibRows = Object.entries(a.fib).slice(0,7).map(([k,v])=>{
+    const dist = (v/a.price-1)*100;
+    const isCurrent = Math.abs(dist)<0.5;
+    return `<div class="fib-item${isCurrent?' current':''}"><div class="f-lbl">${k}</div><div class="f-val" style="color:${dist>=0?'#ef5350':'#26a69a'}">$${format(v,0)}</div><div style="font-size:7px;color:#6a6a7a">${pctStr(dist)}</div></div>`;
+  }).join('');
+
+  return `<div class="card">
+    <h2>${a.name} <span class="bdg ${obc}">${a.obCtrl.toUpperCase()}</span></h2>
+    <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:6px">
+      <span class="price ${pc}">$${a.price>1000?format(a.price,0):format(a.price,2)}</span>
+      <span style="font-size:13px;color:${pc==='up'?'#26a69a':'#ef5350'}">${pctStr(a.chg24h)}</span>
+      <span style="font-size:9px;color:#6a6a7a">24h: $${format(a.low24h,0)}–$${format(a.high24h,0)}</span>
+    </div>
+    <div style="text-align:center;margin-bottom:6px;padding:4px;border-radius:4px;border:1px solid ${sigC}33;background:${sigC}11">
+      <span style="font-weight:700;font-size:12px;color:${sigC}">${sig} (${score})</span>
+    </div>
+    <div class="signals">
+      <span class="sig ${a.rsi14<40?'bull':a.rsi14>60?'bear':'neu'}">RSI ${format(a.rsi14,1)}</span>
+      <span class="sig ${macdC==='#26a69a'?'bull':'bear'}">MACD ${format(a.macdHist,1)}</span>
+      <span class="sig ${a.price>=a.ema20?'bull':'bear'}">EMA20 ${a.price>=a.ema20?'▲':'▼'}</span>
+      <span class="sig ${a.price>=a.ema50?'bull':'bear'}">EMA50 ${a.price>=a.ema50?'▲':'▼'}</span>
+    </div>
+    <div class="l">Key Levels · Support / Resistance</div>
+    <div style="display:flex;gap:16px">
+      <div style="flex:1">${suppHtml||'<div class="r" style="color:#6a6a7a">No support</div>'}</div>
+      <div style="flex:1">${resHtml||'<div class="r" style="color:#6a6a7a">No resistance</div>'}</div>
+    </div>
+    <div class="l">Fibonacci Retracement</div>
+    <div class="fib-grid">${fibRows}</div>
+    <div class="l">Order Book (Top 5)</div>
+    <div style="display:flex;gap:0;margin-top:2px">
+      <div style="flex:1;border-right:1px solid #2a2a3a;padding-right:4px"><div style="font-size:7px;color:#26a69a;text-align:center">BIDS</div>${bidBars}</div>
+      <div style="flex:1;padding-left:4px"><div style="font-size:7px;color:#ef5350;text-align:center">ASKS</div>${askBars}</div>
+    </div>
+    <div class="l">Volume & Risk</div>
+    <div class="v" style="font-size:9px">Buy <span style="color:#26a69a">${format(a.buyRatio,1)}%</span> · Sell <span style="color:#ef5350">${format(100-a.buyRatio,1)}%</span> · Imb <span style="color:${a.imbalance>0?'#26a69a':'#ef5350'}">${format(a.imbalance,1)}%</span></div>
+    <div class="v" style="font-size:9px">ATR: $${format(a.atr,0)} · Vol 24h: $${(a.vol24h/1e6).toFixed(0)}M</div>
+  </div>`;
+}
+
+function createChart(canvasId, data, label, color, levels) {
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  const labels = data.map((_,i)=>i);
+  const datasets = [{
+    label, data, borderColor: color, backgroundColor: color+'33',
+    borderWidth: 1.5, pointRadius: 0, fill: true, tension: 0.1,
+  }];
+
+  if (levels) {
+    const levelColors = {'support':'#26a69a','resistance':'#ef5350'};
+    levels.lines.forEach(l => {
+      datasets.push({
+        label: l.label, data: Array(data.length).fill(l.price),
+        borderColor: l.color||'#f0c040', borderWidth: 1, borderDash: [4,4],
+        pointRadius: 0, fill: false,
+      });
+    });
+  }
+
+  new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: true, animation: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { display: false },
+        y: { grid: { color: '#1a1a28' }, ticks: { color: '#6a6a7a', font: {size:8} } },
+      }
+    }
+  });
+}
+
+function createIndicatorChart(canvasId, data, label, color) {
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: data.map((_,i)=>i),
+      datasets: [{
+        label, data, borderColor: color, borderWidth: 1.2,
+        pointRadius: 0, fill: false, tension: 0.1,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true, animation: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { display: false },
+        y: { grid: { color: '#1a1a28' }, ticks: { color: '#6a6a7a', font: {size:8} } },
+      }
+    }
+  });
+}
+
+function createMACDChart(canvasId, macd, signal, hist) {
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  const labels = macd.map((_,i)=>i);
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'MACD', data: macd, borderColor: '#7c4dff', backgroundColor: 'transparent', borderWidth: 1, pointRadius: 0, type: 'line', order: 0 },
+        { label: 'Signal', data: signal, borderColor: '#f0c040', backgroundColor: 'transparent', borderWidth: 1, pointRadius: 0, type: 'line', order: 0 },
+        { label: 'Hist', data: hist, backgroundColor: hist.map(v=>v>=0?'#26a69a99':'#ef535099'), borderWidth: 0, order: 1 },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true, animation: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { display: false },
+        y: { grid: { color: '#1a1a28' }, ticks: { color: '#6a6a7a', font: {size:8} } },
+      }
+    }
+  });
+}
+
+async function refresh() {
+  document.getElementById('updateTime').textContent = 'Loading...';
+  try {
+    const results = await Promise.all([
+      analyzePair('BTCUSDT', 'BTC'),
+      analyzePair('ETHUSDT', 'ETH'),
+      analyzePair('SOLUSDT', 'SOL'),
+      analyzePair('XAUTUSDT', 'XAUT'),
+      analyzePair('PAXGUSDT', 'PAXG'),
+    ]);
+
+    const now = new Date();
+    document.getElementById('updateTime').textContent = `Updated: ${now.toLocaleString()}`;
+
+    const assets = {};
+    results.forEach(r => { assets[r.name] = r; });
+
+    const avgVol = results.filter(r=>r.name!=='PAXG').reduce((s,r)=>s+Math.abs(r.chg24h),0)/4;
+    document.getElementById('marketRegime').textContent =
+      avgVol > 2.5 ? '🔴 HIGH VOLATILITY' : avgVol > 1.5 ? '🟡 ELEVATED' : '🟢 NORMAL';
+
+    // Main asset cards (BTC + XAUT + PAXG)
+    const order = ['BTC','XAUT','PAXG','ETH','SOL'];
+    document.getElementById('mainGrid').innerHTML = order.map(name => {
+      const a = assets[name];
+      return a ? renderAsset(a) : '';
+    }).join('');
+
+    // Price charts
+    const btc = assets['BTC'];
+    const xaut = assets['XAUT'];
+    if (btc) {
+      const btcLevels = {
+        lines: [
+          ...btc.supports.map(s=>({price:s.p, label:`Supp $${s.p.toFixed(0)}`, color:'#26a69a'})),
+          ...btc.resistances.map(r=>({price:r.p, label:`Res $${r.p.toFixed(0)}`, color:'#ef5350'})),
+        ]
+      };
+      createChart('chart_btc', btc.h1Closes.slice(-100), 'BTC', '#f7931a', btcLevels);
+    }
+    if (xaut) {
+      const gLevels = {
+        lines: [
+          ...xaut.supports.map(s=>({price:s.p, label:`Supp $${s.p.toFixed(0)}`, color:'#26a69a'})),
+          ...xaut.resistances.map(r=>({price:r.p, label:`Res $${r.p.toFixed(0)}`, color:'#ef5350'})),
+        ]
+      };
+      createChart('chart_gold', xaut.h1Closes.slice(-100), 'XAUT', '#f0c040', gLevels);
+    }
+
+    // Indicator charts for BTC
+    if (btc) {
+      const validRsi = btc.rsiArr.slice(90).filter(v=>v!==null);
+      const validMacd = btc.macdArr.m.slice(90).filter(v=>v!==null);
+      const validSig = btc.macdArr.s.slice(90).filter(v=>v!==null);
+      const validHist = btc.macdArr.h.slice(90).filter(v=>v!==null);
+
+      const indicatorCards = [
+        `<div class="card"><h3>BTC RSI(14)</h3><canvas id="ind_rsi_btc"></canvas><div style="text-align:center;margin-top:4px;font-size:10px;font-weight:600;color:${btc.rsi14>70?'#ef5350':btc.rsi14<30?'#26a69a':'#c8c8d4'}">RSI: ${format(btc.rsi14,1)}</div></div>`,
+        `<div class="card"><h3>BTC MACD</h3><canvas id="ind_macd_btc"></canvas><div style="text-align:center;margin-top:4px;font-size:10px">Hist: <span style="color:${btc.macdHist>=0?'#26a69a':'#ef5350'}">${format(btc.macdHist,1)}</span></div></div>`,
+        `<div class="card"><h3>BTC Bollinger Bands</h3><canvas id="ind_bb_btc"></canvas><div style="text-align:center;margin-top:4px;font-size:9px;color:#6a6a7a">BB%: ${format((btc.price-btc.bbLower)/(btc.bbUpper-btc.bbLower)*100,0)}% · Width: $${format(btc.bbUpper-btc.bbLower,0)}</div></div>`,
+      ];
+      document.getElementById('indicatorGrid').innerHTML = indicatorCards.join('');
+
+      setTimeout(() => {
+        createIndicatorChart('ind_rsi_btc', validRsi, 'RSI', btc.rsi14>50?'#ef5350':'#26a69a');
+        createMACDChart('ind_macd_btc', validMacd, validSig, validHist);
+
+        const ctx = document.getElementById('ind_bb_btc').getContext('2d');
+        const bbData = btc.bb;
+        const bbCloses = btc.allCloses.slice(90);
+        const bbLabels = bbCloses.map((_,i)=>i);
+        const bbMid = bbData.mid.slice(90);
+        const bbUpper = bbData.u.slice(90);
+        const bbLower = bbData.l.slice(90);
+        new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: bbLabels,
+            datasets: [
+              { label: 'Upper', data: bbUpper, borderColor: '#ef535066', borderWidth: 1, pointRadius: 0, fill: false },
+              { label: 'Mid', data: bbMid, borderColor: '#f0c04066', borderWidth: 1, pointRadius: 0, fill: false },
+              { label: 'Lower', data: bbLower, borderColor: '#26a69a66', borderWidth: 1, pointRadius: 0, fill: '-1', backgroundColor: '#1a1a2833' },
+              { label: 'Price', data: bbCloses, borderColor: '#c8c8d4', borderWidth: 1.5, pointRadius: 0, fill: false },
+            ]
+          },
+          options: {
+            responsive: true, maintainAspectRatio: true, animation: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { display: false },
+              y: { grid: { color: '#1a1a28' }, ticks: { color: '#6a6a7a', font: {size:8} } },
+            }
+          }
+        });
+      }, 50);
+    }
+
+    // Correlation matrix
+    const pairs = ['BTC','ETH','SOL','XAUT','PAXG'];
+    const matrix = [];
+    for (let i=0;i<pairs.length;i++) {
+      const row = [];
+      for (let j=0;j<pairs.length;j++) {
+        if (i===j) { row.push(1); continue; }
+        const a1 = assets[pairs[i]]?.allCloses;
+        const a2 = assets[pairs[j]]?.allCloses;
+        if (!a1||!a2) { row.push(0); continue; }
+        const min = Math.min(a1.length,a2.length);
+        const r1=[],r2=[];
+        for (let k=1;k<min;k++) {
+          r1.push((a1[a1.length-min+k]-a1[a1.length-min+k-1])/a1[a1.length-min+k-1]);
+          r2.push((a2[a2.length-min+k]-a2[a2.length-min+k-1])/a2[a2.length-min+k-1]);
+        }
+        const n=r1.length,m1=r1.reduce((a,b)=>a+b,0)/n,m2=r2.reduce((a,b)=>a+b,0)/n;
+        const num=r1.reduce((s,a,i)=>s+(a-m1)*(r2[i]-m2),0);
+        const d1=Math.sqrt(r1.reduce((s,a)=>s+(a-m1)**2,0)),d2=Math.sqrt(r2.reduce((s,a)=>s+(a-m2)**2,0));
+        row.push(d1&&d2?num/(d1*d2):0);
+      }
+      matrix.push(row);
+    }
+    let html = '<tr><td></td>'+pairs.map(p=>`<td style="font-weight:600;color:#6a6a7a">${p}</td>`).join('')+'</tr>';
+    for (let i=0;i<pairs.length;i++) {
+      html += `<tr><td style="font-weight:600;color:#6a6a7a">${pairs[i]}</td>`;
+      for (let j=0;j<pairs.length;j++) {
+        const v = matrix[i][j];
+        const c = Math.abs(v)>0.7?'#ef5350':Math.abs(v)>0.4?'#f0c040':'#6a6a7a';
+        html += `<td style="color:${c}">${format(v,2)}</td>`;
+      }
+      html += '</tr>';
+    }
+    document.getElementById('corrTable').innerHTML = html;
+  } catch(e) {
+    document.getElementById('updateTime').textContent = 'Error: '+e.message;
+    console.error(e);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', refresh);
+</script>
+</body>
+</html>

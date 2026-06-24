@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Forex · DXY & Majors</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0a0a0f; color: #c8c8d4; font-family: 'SF Mono', 'Fira Code', monospace; padding: 20px; }
+  .header { display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:20px; padding:16px 24px; background:#12121a; border:1px solid #2a2a3a; border-radius:12px; }
+  .header h1 { font-size:18px; color:#e0e0ee; }
+  .updated { font-size:10px; color:#6a6a7a; margin-left:auto; }
+  a { color:#6a6a7a; text-decoration:none; font-size:11px; }
+  a:hover { color:#c8c8d4; }
+  .card { background:#12121a; border:1px solid #2a2a3a; border-radius:12px; padding:16px; margin-bottom:12px; }
+  .card h3 { font-size:11px; text-transform:uppercase; color:#6a6a7a; letter-spacing:1px; margin-bottom:10px; }
+  .pair-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap:10px; }
+  .pair-card { background:#0f0f18; border:1px solid #2a2a3a; border-radius:8px; padding:12px; }
+  .pair-card.dxy { border-color:#f0c040; }
+  .pair-name { font-size:14px; font-weight:700; display:flex; align-items:center; gap:8px; }
+  .pair-price { font-size:22px; font-weight:700; margin:4px 0; }
+  .pair-change { font-size:12px; }
+  .stat-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:6px; font-size:10px; }
+  .stat-row > div { flex:1; min-width:60px; }
+  .stat-label { font-size:8px; color:#6a6a7a; text-transform:uppercase; letter-spacing:0.5px; }
+  .stat-value { font-size:11px; font-weight:600; }
+  .badge { padding:3px 10px; border-radius:6px; font-weight:700; font-size:11px; display:inline-block; }
+  .badge.bull { background:#1b3a2a; color:#26a69a; }
+  .badge.bear { background:#3a1b1b; color:#ef5350; }
+  .badge.warn { background:#2a2a1b; color:#f0c040; }
+  .dxy-summary { margin-bottom:16px; }
+  .dxy-summary .dxy-price { font-size:36px; font-weight:700; }
+  .signal-dot { width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:4px; }
+  .footer { text-align:center; font-size:10px; color:#3a3a4a; margin-top:16px; }
+  .pair-comparison { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .pair-comparison > div { padding:3px 8px; border-radius:4px; font-size:9px; display:flex; align-items:center; gap:4px; }
+  canvas { width:100% !important; height:120px !important; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<div class="header">
+  <h1>💱 Forex & DXY</h1>
+  <a href="/">← Back to Crypto</a>
+  <span class="updated" id="updated">—</span>
+</div>
+
+<div class="card dxy-summary" id="dxyCard">
+  <h3>DXY · US Dollar Index</h3>
+  <div style="display:flex;flex-wrap:wrap;gap:16px;">
+    <div>
+      <div class="dxy-price" id="dxyPrice">—</div>
+      <div id="dxyChange" class="pair-change" style="margin-top:2px;"></div>
+    </div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;">
+      <div><span class="stat-label">Trend</span><br><span id="dxyTrend" style="font-size:16px;"></span></div>
+      <div><span class="stat-label">RSI</span><br><span id="dxyRsi" style="font-size:16px;"></span></div>
+      <div><span class="stat-label">Z-Score</span><br><span id="dxyZ" style="font-size:16px;"></span></div>
+      <div><span class="stat-label">Vol Regime</span><br><span id="dxyVol" style="font-size:11px;"></span></div>
+      <div><span class="stat-label">Buy Pressure</span><br><span id="dxyBuyPres" style="font-size:13px;"></span></div>
+    </div>
+  </div>
+  <div id="dxyLevels" style="margin-top:6px;font-size:10px;color:#6a6a7a;display:flex;gap:12px;"></div>
+</div>
+
+<div class="pair-grid" id="pairGrid"></div>
+
+<div class="card">
+  <h3>Pair Comparison · All Changes</h3>
+  <div class="pair-comparison" id="pairComparison"></div>
+</div>
+
+<div class="card">
+  <h3>DXY vs Majors · Correlation View</h3>
+  <div style="display:flex;gap:12px;flex-wrap:wrap;">
+    <div style="flex:2;min-width:300px;"><canvas id="dxyChart"></canvas></div>
+    <div style="flex:1;min-width:150px;font-size:10px;" id="correlationContent"></div>
+  </div>
+</div>
+
+<div class="footer">Data from Yahoo Finance · Updates every 60s</div>
+
+<script>
+const state = { data: null };
+
+let dxyChart;
+function initChart() {
+  dxyChart = new Chart(document.getElementById('dxyChart').getContext('2d'), {
+    type: 'line',
+    data: { labels: [], datasets: [
+      { label: 'DXY', data: [], borderColor: '#f0c040', borderWidth: 1.5, pointRadius: 0, yAxisID: 'y' },
+    ]},
+    options: {
+      responsive: true, maintainAspectRatio: true, animation: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { labels: { color: '#6a6a7a', font: { size: 9 } } } },
+      scales: {
+        x: { display: false },
+        y: { grid: { color: '#1a1a28' }, ticks: { color: '#6a6a7a', font: { size: 9 } }, position: 'left' },
+      }
+    }
+  });
+}
+
+function renderDXY(dxy) {
+  if (!dxy) return;
+  const color = dxy.changePct >= 0 ? '#26a69a' : '#ef5350';
+  document.getElementById('dxyPrice').textContent = dxy.price.toFixed(2);
+  document.getElementById('dxyPrice').style.color = color;
+  document.getElementById('dxyChange').innerHTML = `${dxy.changePct >= 0 ? '+' : ''}${dxy.changePct}% · H: ${dxy.high24.toFixed(2)} L: ${dxy.low24.toFixed(2)}`;
+
+  const trendColor = dxy.trend === 'up' ? '#26a69a' : '#ef5350';
+  document.getElementById('dxyTrend').innerHTML = `<span style="color:${trendColor};font-weight:700;">${dxy.trend.toUpperCase()}</span> <span style="color:#6a6a7a;font-size:10px;">${dxy.emaTrend}</span>`;
+
+  const rsiColor = dxy.rsi > 65 ? '#ef5350' : dxy.rsi < 35 ? '#26a69a' : '#f0c040';
+  document.getElementById('dxyRsi').innerHTML = `<span style="color:${rsiColor};">${dxy.rsi}</span>`;
+
+  const zColor = Math.abs(dxy.zScore) > 1.5 ? '#ef5350' : '#6a6a7a';
+  document.getElementById('dxyZ').innerHTML = `<span style="color:${zColor};">${dxy.zScore}</span>`;
+
+  const vrColor = dxy.volRegime === 'expanding' ? '#ef5350' : dxy.volRegime === 'contracting' ? '#26a69a' : '#f0c040';
+  document.getElementById('dxyVol').innerHTML = `<span style="color:${vrColor};">${dxy.volRegime.toUpperCase()}</span>`;
+
+  const bpColor = dxy.buyPressure > 55 ? '#26a69a' : dxy.buyPressure < 45 ? '#ef5350' : '#f0c040';
+  document.getElementById('dxyBuyPres').innerHTML = `<span style="color:${bpColor};">${dxy.buyPressure}%</span>`;
+
+  const levels = [];
+  if (dxy.supports?.length) levels.push(`Support: <span style="color:#26a69a;">$${dxy.supports.join(', $')}</span>`);
+  if (dxy.resistances?.length) levels.push(`Resistance: <span style="color:#ef5350;">$${dxy.resistances.join(', $')}</span>`);
+  document.getElementById('dxyLevels').innerHTML = levels.join(' · ');
+
+  document.getElementById('dxyCard').classList.add('dxy');
+}
+
+function renderPairCard(pair, sym) {
+  const color = pair.changePct >= 0 ? '#26a69a' : '#ef5350';
+  const trendColor = pair.trend === 'up' ? '#26a69a' : '#ef5350';
+  const rsiColor = pair.rsi > 65 ? '#ef5350' : pair.rsi < 35 ? '#26a69a' : '#f0c040';
+  const bpColor = pair.buyPressure > 55 ? '#26a69a' : pair.buyPressure < 45 ? '#ef5350' : '#f0c040';
+
+  const priceDisplay = sym === 'DX-Y.NYB' ? pair.price.toFixed(2) : pair.price.toFixed(5);
+
+  return `
+    <div class="pair-card">
+      <div class="pair-name">${pair.name} <span style="font-size:10px;color:#6a6a7a;font-weight:400;">${pair.label}</span></div>
+      <div class="pair-price" style="color:${color};">${priceDisplay}</div>
+      <div class="pair-change" style="color:${color};">${pair.changePct >= 0 ? '+' : ''}${pair.changePct}%</div>
+      <div class="stat-row">
+        <div><div class="stat-label">Trend</div><div class="stat-value" style="color:${trendColor};">${pair.trend.toUpperCase()}</div></div>
+        <div><div class="stat-label">RSI</div><div class="stat-value" style="color:${rsiColor};">${pair.rsi || '—'}</div></div>
+        <div><div class="stat-label">Buy %</div><div class="stat-value" style="color:${bpColor};">${pair.buyPressure}%</div></div>
+        <div><div class="stat-label">Z-Score</div><div class="stat-value">${pair.zScore || '—'}</div></div>
+      </div>
+      <div class="stat-row">
+        <div><div class="stat-label">Range 24H</div><div class="stat-value">${pair.range24?.toFixed(sym === 'DX-Y.NYB' ? 2 : 5) || '—'}</div></div>
+        <div><div class="stat-label">Vol Ratio</div><div class="stat-value">${pair.volRatio}x</div></div>
+        <div><div class="stat-label">Up Days</div><div class="stat-value">${pair.upDaysPct}%</div></div>
+        <div><div class="stat-label">Regime</div><div class="stat-value" style="color:${pair.volRegime === 'expanding' ? '#ef5350' : pair.volRegime === 'contracting' ? '#26a69a' : '#f0c040'};">${pair.volRegime}</div></div>
+      </div>
+      ${pair.supports?.length || pair.resistances?.length ? `
+      <div class="stat-row">
+        <div style="flex:2;"><div class="stat-label">Levels</div><div style="font-size:9px;color:#6a6a7a;">
+          ${pair.supports?.length ? `Supp: <span style="color:#26a69a;">$${pair.supports.join(', $')}</span>` : ''}
+          ${pair.resistances?.length ? ` Res: <span style="color:#ef5350;">$${pair.resistances.join(', $')}</span>` : ''}
+        </div></div>
+      </div>` : ''}
+    </div>
+  `;
+}
+
+function renderComparison(pairs) {
+  const entries = Object.entries(pairs).filter(([k]) => k !== 'DX-Y.NYB');
+  const dxy = pairs['DX-Y.NYB'];
+  const html = [];
+
+  // DXY first
+  const dxyColor = dxy?.changePct >= 0 ? '#26a69a' : '#ef5350';
+  html.push(`<div style="background:#1a1a10;border:1px solid #f0c040;">
+    <span style="color:#f0c040;">DXY</span>
+    <span style="color:${dxyColor};">${dxy?.changePct >= 0 ? '+' : ''}${dxy?.changePct}%</span>
+  </div>`);
+
+  // All other pairs
+  entries.forEach(([sym, p]) => {
+    const color = p.changePct >= 0 ? '#26a69a' : '#ef5350';
+    html.push(`<div style="background:#0f0f18;">
+      <span style="color:#c8c8d4;">${p.name}</span>
+      <span style="color:${color};">${p.changePct >= 0 ? '+' : ''}${p.changePct}%</span>
+    </div>`);
+  });
+
+  document.getElementById('pairComparison').innerHTML = html.join('');
+}
+
+function renderCorrelation(pairs) {
+  const dxy = pairs['DX-Y.NYB'];
+  if (!dxy) return;
+
+  const entries = Object.entries(pairs).filter(([k]) => k !== 'DX-Y.NYB');
+  const html = [];
+  html.push(`<div class="stat-label">DXY vs Majors</div>`);
+
+  entries.forEach(([sym, p]) => {
+    const dir = (dxy.changePct > 0 && p.changePct < 0) || (dxy.changePct < 0 && p.changePct > 0)
+      ? { label: 'inverse', color: '#26a69a' }
+      : { label: 'aligned', color: '#ef5350' };
+    html.push(`<div style="margin-top:4px;">
+      <span style="color:#c8c8d4;">${p.name}</span>
+      <span style="color:${dir.color};font-size:9px;">${dir.label}</span>
+      <span style="color:#6a6a7a;font-size:8px;">DXY ${dxy.changePct >= 0 ? '+' : ''}${dxy.changePct}% · ${p.label} ${p.changePct >= 0 ? '+' : ''}${p.changePct}%</span>
+    </div>`);
+  });
+
+  document.getElementById('correlationContent').innerHTML = html.join('');
+}
+
+async function updateAll() {
+  try {
+    const res = await fetch('/api/forex');
+    const data = await res.json();
+    state.data = data;
+    document.getElementById('updated').textContent = `Updated: ${data.updated?.slice(11, 19) || '—'}`;
+
+  const pairs = data.pairs || {};
+  const validPairs = Object.fromEntries(Object.entries(pairs).filter(([, p]) => p !== null));
+  const dxy = validPairs['DX-Y.NYB'];
+
+    renderDXY(dxy);
+    renderComparison(validPairs);
+
+    const grid = document.getElementById('pairGrid');
+    grid.innerHTML = Object.entries(validPairs).map(([sym, p]) => renderPairCard(p, sym)).join('');
+
+    renderCorrelation(validPairs);
+  } catch(e) { console.error(e); }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initChart();
+  updateAll();
+  setInterval(updateAll, 60000);
+});
+</script>
+</body>
+</html>

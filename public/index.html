@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BTC Options Sell</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',monospace;background:#0d1117;color:#c9d1d9;padding:20px;max-width:1200px;margin:auto}
+h1{color:#58a6ff;font-size:20px;margin-bottom:4px}
+.sub{color:#8b949e;font-size:12px;margin-bottom:16px}
+.controls{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:16px;background:#161b22;padding:12px 16px;border-radius:8px;border:1px solid #30363d}
+.controls label{font-size:11px;color:#8b949e}
+.controls input,.controls select{background:#21262d;border:1px solid #30363d;color:#c9d1d9;padding:5px 8px;border-radius:4px;font-size:12px;width:70px}
+.controls button{background:#238636;color:#fff;border:none;padding:6px 16px;border-radius:4px;cursor:pointer;font-size:12px}
+.controls button:hover{background:#2ea043}
+.metrics{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.metric{background:#161b22;border:1px solid #30363d;border-radius:8px;padding:12px 16px;flex:1;min-width:140px;text-align:center}
+.metric .val{font-size:20px;font-weight:700;margin-top:4px}
+.table-wrap{background:#161b22;border:1px solid #30363d;border-radius:8px;overflow:hidden}
+table{width:100%;border-collapse:collapse;font-size:11px}
+th{background:#1c2333;color:#8b949e;padding:8px 6px;text-align:right;font-weight:600;position:sticky;top:0}
+th:first-child{text-align:left;padding-left:12px}
+td{padding:6px;text-align:right;border-bottom:1px solid #21262d}
+td:first-child{text-align:left;padding-left:12px;font-weight:600}
+tr:hover{background:#1c2333}
+tr.rec-high{background:#2d1b1b}
+tr.rec-good{background:#1b2d1b}
+tr.rec-safe{background:#1b2333}
+.pos{color:#3fb950}
+.neg{color:#f85149}
+.warn{color:#d29922}
+.badge{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:600}
+.badge.high{background:#3fb95022;color:#3fb950}
+.badge.med{background:#d2992222;color:#d29922}
+.badge.low{background:#f8514922;color:#f85149}
+.loading{display:inline-block;width:10px;height:10px;border:2px solid #8b949e;border-top-color:#58a6ff;border-radius:50%;animation:s .8s linear infinite;margin-right:6px;vertical-align:middle}
+@keyframes s{to{transform:rotate(360deg)}}
+#error{color:#f85149;padding:10px;background:#2d1b1b;border-radius:6px;margin:10px 0;display:none;font-size:12px}
+</style>
+</head>
+<body>
+<h1>🧾 BTC Option Selling Analyzer</h1>
+<div class="sub">Probability-based strike selection · Monte Carlo simulation · Max pain</div>
+
+<div class="controls">
+  <label>Days to Expiry</label>
+  <input type="number" id="dte" value="7" min="1" max="90" onchange="analyze()">
+  <label>Premium (% of strike)</label>
+  <input type="number" id="premium" value="2.0" min="0.5" max="10" step="0.1" onchange="analyze()">
+  <label>Min ROC</label>
+  <input type="number" id="minRoc" value="15" min="5" max="50">
+  <label>Max P(ITM)</label>
+  <input type="number" id="maxPitm" value="15" min="1" max="50">
+  <button onclick="analyze()">Run</button>
+  <span id="status" style="color:#8b949e;font-size:11px"></span>
+</div>
+
+<div class="metrics" id="metrics"></div>
+<div id="error"></div>
+<div class="table-wrap"><table><thead id="tableHead"></thead><tbody id="results"></tbody></table></div>
+
+<script>
+async function analyze() {
+  const dte = document.getElementById('dte').value;
+  const prem = document.getElementById('premium').value;
+  document.getElementById('status').innerHTML = '<span class="loading"></span> Running 10K Monte Carlo...';
+
+  try {
+    const res = await fetch(`/api/options/BTCUSDT?days=${dte}&premium=${prem}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const d = await res.json();
+    render(d);
+  } catch(e) { showError(e.message); }
+  document.getElementById('status').textContent = '';
+}
+
+function render(d) {
+  // Metrics bar
+  document.getElementById('metrics').innerHTML = `
+    <div class="metric"><div style="font-size:11px;color:#8b949e">Price</div><div class="val">$${d.price.toLocaleString()}</div></div>
+    <div class="metric"><div style="font-size:11px;color:#8b949e">Expected Move</div><div class="val">${d.expectedMovePct}%</div><div style="font-size:10px;color:#8b949e">$${d.expectedMove.toLocaleString()}</div></div>
+    <div class="metric"><div style="font-size:11px;color:#8b949e">Max Pain</div><div class="val" style="color:#d29922">$${d.maxPain.toLocaleString()}</div></div>
+    <div class="metric"><div style="font-size:11px;color:#8b949e">IV / RV</div><div class="val" style="font-size:16px">${d.ivEstimate}% <span style="color:#8b949e;font-size:11px">/ ${d.realizedVol}%</span></div></div>
+    <div class="metric"><div style="font-size:11px;color:#8b949e">Best Strike</div><div class="val" style="color:#3fb950;font-size:14px">${d.bestStrike}</div></div>
+    <div class="metric"><div style="font-size:11px;color:#8b949e">Vol Percentile</div><div class="val">${d.volPercentile}%</div></div>
+  `;
+
+  // Table header
+  document.getElementById('tableHead').innerHTML = `
+    <tr>
+      <th style="text-align:left;padding-left:12px">Strike</th>
+      <th>Dist</th>
+      <th>Sig</th>
+      <th>P(ITM)</th>
+      <th>P(Tch)</th>
+      <th>Prem</th>
+      <th>Margin</th>
+      <th>Notional</th>
+      <th>ROC</th>
+      <th>θ/∂</th>
+      <th>Win→</th>
+      <th>Loss→</th>
+      <th>Rec</th>
+    </tr>
+  `;
+
+  const minRoc = parseFloat(document.getElementById('minRoc').value) || 10;
+  const maxPitm = parseFloat(document.getElementById('maxPitm').value) || 20;
+
+  let html = '';
+  for (const s of d.strikes) {
+    if (Math.abs(s.distancePct) > 16) continue;
+    const isCall = s.strike > d.price;
+    const meetsFilter = s.probItm <= maxPitm && s.roc >= minRoc;
+    const rowClass = s.recommendation === 'HIGH RISK' ? 'rec-high' : s.recommendation === 'SAFE' ? 'rec-safe' : s.recommendation === 'GOOD' ? 'rec-good' : '';
+    const arrow = isCall ? '⬆' : '⬇';
+    html += `<tr class="${rowClass}" style="${meetsFilter ? 'border-left:2px solid #3fb950' : ''}">
+      <td style="padding-left:12px">${arrow} $${s.strike.toLocaleString()}</td>
+      <td class="${s.distancePct > 0 ? 'pos' : 'neg'}">${s.distancePct > 0 ? '+' : ''}${s.distancePct}%</td>
+      <td>${s.sigmasAway}</td>
+      <td class="${s.probItm > 30 ? 'neg' : s.probItm > 15 ? 'warn' : 'pos'}">${s.probItm}%</td>
+      <td class="warn">${s.probTouch}%</td>
+      <td class="pos">$${s.premiumCollected}</td>
+      <td style="color:#d29922">$${(s.marginRequired).toLocaleString()}</td>
+      <td style="color:#8b949e">$${(s.notionalExposure).toLocaleString()}</td>
+      <td class="${s.roc > 20 ? 'pos' : 'warn'}">${s.roc}%</td>
+      <td style="color:#8b949e">${s.thetaPerMargin}%</td>
+      <td class="pos">${s.roiIfWins}%</td>
+      <td class="neg">${s.roiIfLoses}%</td>
+      <td><span class="badge ${s.recommendation === 'HIGH RISK' ? 'low' : s.recommendation === 'GOOD' || s.recommendation === 'SAFE' ? 'high' : 'med'}">${s.recommendation}</span></td>
+    </tr>`;
+  }
+  document.getElementById('results').innerHTML = html;
+}
+
+function showError(m) {
+  const e = document.getElementById('error');
+  e.textContent = '⚠ ' + m;
+  e.style.display = 'block';
+}
+
+analyze();
+</script>
+</body>
+</html>

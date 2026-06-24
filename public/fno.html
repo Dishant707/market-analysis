@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>F&O · Arbitrage Engine</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a0f;color:#c8c8d4;font-family:'SF Mono','Fira Code',monospace;padding:20px}
+.h{display:flex;gap:16px;align-items:center;margin-bottom:16px;padding:12px 16px;background:#12121a;border:1px solid #2a2a3a;border-radius:10px;flex-wrap:wrap}
+.card{background:#12121a;border:1px solid #2a2a3a;border-radius:10px;padding:14px;margin-bottom:12px}
+.card h3{font-size:11px;text-transform:uppercase;color:#6a6a7a;letter-spacing:1px;margin-bottom:10px}
+.g{display:flex;gap:12px;flex-wrap:wrap}
+.col{flex:1;min-width:240px;background:#0f0f18;border-radius:8px;padding:12px;border-left:3px solid}
+.l{font-size:9px;color:#6a6a7a;text-transform:uppercase;letter-spacing:.5px;margin-top:6px}
+.v{font-size:11px;margin:2px 0}
+.strat{border:1px solid #2a2a3a;border-radius:6px;padding:8px;margin:4px 0;font-size:10px}
+.strat h4{font-size:10px;margin-bottom:4px}
+.bdg{display:inline-block;padding:2px 6px;border-radius:3px;font-size:9px;font-weight:700}
+.bdg.g{background:#1b3a2a;color:#26a69a}.bdg.r{background:#3a1b1b;color:#ef5350}.bdg.y{background:#2a2a1b;color:#f0c040}
+.footer{text-align:center;font-size:9px;color:#3a3a4a;margin-top:20px}
+a{color:#6a6a7a;font-size:11px;text-decoration:none}
+a:hover{color:#c8c8d4}
+</style>
+</head>
+<body>
+<div class="h">
+  <span style="font-size:18px;font-weight:700;color:#e0e0ee">⚡ F&O Arbitrage Engine</span>
+  <a href="/crypto.html">← Crypto Quant</a>
+  <a href="/" style="margin-left:auto;">Correlation →</a>
+  <span id="updateTime" style="font-size:10px;color:#6a6a7a;"></span>
+</div>
+
+<div class="card">
+  <h3>Futures Dashboard · Funding · Basis · OI</h3>
+  <div class="g" id="futuresGrid"></div>
+</div>
+
+<div class="card">
+  <h3>Risk-Free Strategies</h3>
+  <div class="g" id="stratGrid"></div>
+</div>
+
+<div class="card">
+  <h3>Black-Scholes · Options Calculator</h3>
+  <div style="display:flex;gap:16px;flex-wrap:wrap;">
+    <div style="flex:1;min-width:200px;">
+      <div class="l">Parameters</div>
+      <div style="font-size:10px;margin:4px 0;">
+        <label>Spot: <input id="bsSpot" value="64000" style="width:80px;background:#1a1a28;color:#c8c8d4;border:1px solid #3a3a4a;padding:4px;border-radius:4px;font-family:inherit;font-size:10px;"></label>
+        <label>Strike: <input id="bsStrike" value="65000" style="width:80px;background:#1a1a28;color:#c8c8d4;border:1px solid #3a3a4a;padding:4px;border-radius:4px;font-family:inherit;font-size:10px;"></label>
+        <label>Days: <input id="bsDays" value="30" style="width:50px;background:#1a1a28;color:#c8c8d4;border:1px solid #3a3a4a;padding:4px;border-radius:4px;font-family:inherit;font-size:10px;"></label>
+        <label>σ%: <input id="bsSigma" value="55" style="width:50px;background:#1a1a28;color:#c8c8d4;border:1px solid #3a3a4a;padding:4px;border-radius:4px;font-family:inherit;font-size:10px;"></label>
+        <button onclick="calcBS()" style="background:#1a1a28;color:#c8c8d4;border:1px solid #3a3a4a;padding:4px 10px;border-radius:4px;cursor:pointer;font:inherit;font-size:10px;">Calc</button>
+      </div>
+    </div>
+    <div style="flex:1;min-width:150px;">
+      <div class="l">Call</div>
+      <div id="bsCall" style="font-size:18px;font-weight:700;"></div>
+      <div id="bsCallGreeks" style="font-size:9px;color:#6a6a7a;"></div>
+    </div>
+    <div style="flex:1;min-width:150px;">
+      <div class="l">Put</div>
+      <div id="bsPut" style="font-size:18px;font-weight:700;"></div>
+      <div id="bsPutGreeks" style="font-size:9px;color:#6a6a7a;"></div>
+    </div>
+    <div style="flex:1;min-width:150px;">
+      <div class="l">Put-Call Parity</div>
+      <div id="bsParity" style="font-size:11px;"></div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">Binance Futures API · Refresh every 30s</div>
+
+<script>
+function refresh() {
+  fetch('/api/fno').then(r => r.json()).then(d => {
+    document.getElementById('updateTime').textContent = `Updated: ${new Date().toLocaleTimeString()}`;
+    
+    // Futures grid
+    const names = ['BTC', 'ETH', 'SOL'];
+    const futuresHtml = names.map(name => {
+      const a = d[name];
+      if (!a || !a.futures) return '';
+      const f = a.futures;
+      const frColor = f.fundingRate > 0.005 ? '#ef5350' : f.fundingRate < -0.005 ? '#26a69a' : '#6a6a7a';
+      const basisColor = f.basis > 0 ? '#26a69a' : '#ef5350';
+      return `<div class="col" style="border-color:${name === 'BTC' ? '#f0c040' : name === 'ETH' ? '#ab47bc' : '#42a5f5'}">
+        <div style="font-weight:600;font-size:13px;">${name}</div>
+        <div class="v">Mark: $${f.markPrice.toFixed(f.markPrice > 100 ? 0 : 2)}</div>
+        <div class="l">Funding Rate (8h)</div>
+        <div class="v" style="color:${frColor};">${f.fundingRate > 0 ? '+' : ''}${f.fundingRate}% <span style="color:#6a6a7a;">(avg ${f.fundingRateAvg > 0 ? '+' : ''}${f.fundingRateAvg}%)</span></div>
+        <div class="l">Basis</div>
+        <div class="v" style="color:${basisColor};">${f.basis > 0 ? '+' : ''}${f.basis}% <span style="color:#6a6a7a;">ann ${f.annualizedBasis > 0 ? '+' : ''}${f.annualizedBasis}%</span></div>
+        <div class="l">Open Interest</div>
+        <div class="v">${(f.openInterest / 1000).toFixed(0)}K ${name} · $${(f.openInterestUsd / 1e9).toFixed(2)}B</div>
+      </div>`;
+    }).join('');
+    document.getElementById('futuresGrid').innerHTML = futuresHtml;
+    
+    // Strategies
+    const stratHtml = names.map(name => {
+      const a = d[name];
+      if (!a || !a.strategies || a.strategies.length === 0) return '';
+      const best = a.bestStrategy;
+      return `<div class="col" style="border-color:${name === 'BTC' ? '#f0c040' : name === 'ETH' ? '#ab47bc' : '#42a5f5'}">
+        <div style="font-weight:600;font-size:12px;margin-bottom:4px;">${name}</div>
+        ${a.strategies.map(s => {
+          const bg = s.annualizedReturn > 10 ? 'g' : s.annualizedReturn > 0 ? 'y' : 'r';
+          return `<div class="strat"><h4>${s.name}</h4><div><span class="bdg ${bg}">${s.action}</span></div><div style="color:#b0b0c0;margin-top:2px;">${s.detail}</div>${s.annualizedReturn ? `<div style="color:#6a6a7a;margin-top:2px;">Ann ret: ${s.annualizedReturn}%</div>` : ''}<div style="color:#5a5a6a;font-size:8px;margin-top:2px;">Risk: ${s.risk}</div></div>`;
+        }).join('')}
+      </div>`;
+    }).join('');
+    document.getElementById('stratGrid').innerHTML = stratHtml;
+  }).catch(() => {});
+}
+
+function calcBS() {
+  const S = parseFloat(document.getElementById('bsSpot').value) || 64000;
+  const K = parseFloat(document.getElementById('bsStrike').value) || 65000;
+  const days = parseFloat(document.getElementById('bsDays').value) || 30;
+  const sigma = (parseFloat(document.getElementById('bsSigma').value) || 55) / 100;
+  const T = days / 365;
+  const r = 0.05; // risk-free rate
+  
+  // Call
+  const callPrice = S * normCDF(d1(S, K, T, r, sigma)) - K * Math.exp(-r * T) * normCDF(d1(S, K, T, r, sigma) - sigma * Math.sqrt(T));
+  const callDelta = normCDF(d1(S, K, T, r, sigma));
+  const callGamma = Math.exp(-0.5 * d1(S, K, T, r, sigma)**2) / Math.sqrt(2 * Math.PI) / (S * sigma * Math.sqrt(T));
+  
+  // Put
+  const putPrice = K * Math.exp(-r * T) * normCDF(-(d1(S, K, T, r, sigma) - sigma * Math.sqrt(T))) - S * normCDF(-d1(S, K, T, r, sigma));
+  const putDelta = -normCDF(-d1(S, K, T, r, sigma));
+  
+  document.getElementById('bsCall').innerHTML = `$${callPrice.toFixed(2)}`;
+  document.getElementById('bsCallGreeks').innerHTML = `Δ ${callDelta.toFixed(3)} · Γ ${callGamma.toFixed(6)}`;
+  document.getElementById('bsPut').innerHTML = `$${putPrice.toFixed(2)}`;
+  document.getElementById('bsPutGreeks').innerHTML = `Δ ${putDelta.toFixed(3)} · Γ ${callGamma.toFixed(6)}`;
+  
+  // Put-Call Parity
+  const parityPrice = callPrice - S + K * Math.exp(-r * T);
+  const deviation = putPrice - parityPrice;
+  document.getElementById('bsParity').innerHTML = `
+    <div>Parity put: $${parityPrice.toFixed(2)}</div>
+    <div>Actual put: $${putPrice.toFixed(2)}</div>
+    <div style="color:${Math.abs(deviation) > 0.5 ? '#ef5350' : '#26a69a'};">Deviation: $${deviation.toFixed(2)}</div>
+    <div style="font-size:9px;color:#6a6a7a;">${Math.abs(deviation) > 0.5 ? '⚠ Potential arb' : '✅ No arb'}</div>`;
+}
+
+function normCDF(x) { return 0.5 * (1 + erf(x / Math.sqrt(2))); }
+function erf(x) {
+  const a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741, a4 = -1.453152027, a5 = 1.061405429, p = 0.3275911;
+  const sign = x < 0 ? -1 : 1; x = Math.abs(x);
+  const t = 1 / (1 + p * x);
+  return sign * (1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x));
+}
+function d1(S, K, T, r, sigma) { return (Math.log(S / K) + (r + 0.5 * sigma * sigma) * T) / (sigma * Math.sqrt(T)); }
+
+document.addEventListener('DOMContentLoaded', () => { refresh(); setInterval(refresh, 30000); calcBS(); });
+</script>
+</body>
+</html>

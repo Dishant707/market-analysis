@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crypto Quant</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a0f;color:#c8c8d4;font-family:'SF Mono','Fira Code',monospace;padding:20px}
+.g{display:flex;gap:12px;flex-wrap:wrap}
+.col{flex:1;min-width:280px;background:#12121a;border:1px solid #2a2a3a;border-radius:10px;padding:14px;margin-bottom:12px}
+.col h2{font-size:14px;margin-bottom:8px;border-bottom:1px solid #2a2a3a;padding-bottom:6px;display:flex;justify-content:space-between}
+.price{font-size:24px;font-weight:700}.up{color:#26a69a}.down{color:#ef5350}
+.l{font-size:9px;color:#6a6a7a;text-transform:uppercase;letter-spacing:.5px;margin-top:6px}
+.v{font-size:11px;margin:2px 0}
+.r{display:flex;justify-content:space-between;padding:2px 0;font-size:10px;border-bottom:1px solid #0f0f18}
+.hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.bdg{display:inline-block;padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700}
+.bdg.buy{background:#1b3a2a;color:#26a69a}.bdg.sell{background:#3a1b1b;color:#ef5350}.bdg.warn{background:#2a2a1b;color:#f0c040}
+.corr{background:#12121a;border:1px solid #2a2a3a;border-radius:10px;padding:14px;margin-top:12px}
+.corr table{width:100%;border-collapse:collapse;font-size:10px}
+.corr td{text-align:center;padding:4px;border:1px solid #1a1a28}
+.hdr-line{display:flex;gap:20px;align-items:center;margin-bottom:16px;padding:12px 16px;background:#12121a;border:1px solid #2a2a3a;border-radius:10px}
+.footer{text-align:center;font-size:9px;color:#3a3a4a;margin-top:20px}
+.adv{background:#12121a;border:1px solid #2a2a3a;border-radius:10px;padding:14px;margin-top:12px}
+.adv h3{font-size:11px;text-transform:uppercase;color:#6a6a7a;margin-bottom:10px}
+.adv-g{display:flex;gap:10px;flex-wrap:wrap}
+.adv-c{flex:1;min-width:220px;background:#0f0f18;border-radius:8px;padding:10px;border:1px solid #1a1a28}
+.adv-c .l{font-size:8px;margin-top:3px}.adv-c .v{font-size:10px}
+.whale{font-size:8px;color:#6a6a7a;padding:1px 0}
+.whale.b{color:#26a69a}.whale.s{color:#ef5350}
+.pr{height:6px;border-radius:3px;margin:3px 0;display:flex;overflow:hidden}
+.ob{display:flex;gap:0;height:100px;overflow:hidden;margin-top:4px}
+.ob-side{flex:1;font-size:8px;position:relative}
+.ob-bar{position:absolute;height:100%;opacity:0.3;border-radius:2px}
+.ob-text{position:relative;padding:1px 3px;display:flex;justify-content:space-between}
+.heavy{font-size:10px;font-weight:700;padding:4px 8px;border-radius:4px;margin-top:4px;text-align:center}
+.interp{font-size:9px;color:#b0b0c0;padding:6px;background:#0a0a15;border-radius:4px;margin-top:6px;line-height:1.4}
+.tech{background:#12121a;border:1px solid #2a2a3a;border-radius:10px;padding:14px;margin-top:12px}
+.tech h3{font-size:12px;margin-bottom:8px;color:#e0e0ee}
+.tech-g{display:flex;gap:10px;flex-wrap:wrap}
+.tech-c{flex:1;min-width:240px;background:#0f0f18;border-radius:8px;padding:10px;border:1px solid #1a1a28}
+.tech-c .l{font-size:8px;margin-top:4px}.tech-c .v{font-size:10px}
+.tech-bar{height:4px;border-radius:2px;margin:2px 0;position:relative}
+.tech-fill{height:100%;border-radius:2px}
+.pat{display:inline-block;padding:1px 4px;border-radius:3px;font-size:8px;margin:1px;font-weight:600}
+.pat.bull{background:#1b3a2a;color:#26a69a}.pat.bear{background:#3a1b1b;color:#ef5350}.pat.neu{background:#1a1a28;color:#6a6a7a}
+</style>
+</head>
+<body>
+
+<div class="hdr-line">
+  <span style="font-size:18px;font-weight:700;color:#e0e0ee">📊 Crypto Quant</span>
+  <span id="updateTime" style="font-size:10px;color:#6a6a7a;"></span>
+  <span id="marketRegime" style="font-size:11px;"></span>
+  <button onclick="refresh()" style="margin-left:auto;background:#1a1a28;color:#c8c8d4;border:1px solid #3a3a4a;padding:6px 14px;border-radius:6px;cursor:pointer;font-family:inherit">⟳ Refresh</button>
+</div>
+
+<div class="g" id="cols"></div>
+
+<div class="card" style="border-color:#7c4dff;">
+  <h3>📊 Monte Carlo · Stats · Volume Efficiency</h3>
+  <div class="g" id="mcGrid"></div>
+</div>
+
+<div class="corr" id="corrSection">
+  <div class="l">Correlation Matrix · Daily Returns</div>
+  <div id="corrMatrix"></div>
+</div>
+
+<div class="adv" id="advSection">
+  <h3>Advanced Quant · Markov Chain · Volume Thrust · Whales</h3>
+  <div class="adv-g" id="advGrid"></div>
+</div>
+
+<div class="footer">Data from Binance · Live via WebSocket · Pulse v2</div>
+
+<script>
+const LIVE_PRICES = {};
+
+function refresh() {
+  fetch('/api/crypto/quant').then(r => r.json()).then(r => {
+    const assets = r.assets;
+    const corr = r.correlation;
+    document.getElementById('updateTime').textContent = `Updated: ${r.updated}`;
+
+    const vols = Object.values(assets).filter(a => !a.error).map(a => a.volatility);
+    const avgVol = vols.reduce((a,b) => a+b, 0) / vols.length;
+    document.getElementById('marketRegime').textContent = avgVol > 2.5 ? '🔴 HIGH VOLATILITY' : avgVol > 1.8 ? '🟡 MEDIUM' : '🟢 LOW VOL';
+
+    const names = ['BTC', 'ETH', 'SOL', 'XAUT'];
+    const colsHtml = names.map(name => {
+      const a = assets[name];
+      if (!a || a.error) return `<div class="col"><h2>${name}</h2><div>Error: ${a?.error}</div></div>`;
+
+      const s = a.stats; const ctrl = a.control; const vol = a.volume;
+      const w = a.weekly; const lv = a.levels; const ob = a.orderBook;
+      const pc = a.chg24h >= 0 ? 'up' : 'down';
+      const cb = ctrl.controller === 'buyers' ? 'buy' : ctrl.controller === 'sellers' ? 'sell' : 'warn';
+      const rc = Math.abs(ctrl.reversalDist) < 0.3 ? '#ef5350' : Math.abs(ctrl.reversalDist) < 1 ? '#f0c040' : '#6a6a7a';
+
+      const supp = (lv.supports || []).slice(0,2);
+      const res = (lv.resistances || []).slice(0,2);
+
+      // Order book ladder
+      const maxQ = Math.max(...(ob.bidWalls || []).map(x => x[1]), ...(ob.askWalls || []).map(x => x[1]), 0.001);
+      const bidBars = (ob.bidWalls || []).map(x => {
+        const pct = (x[1] / maxQ * 100);
+        return `<div style="height:14px;margin:1px 0;position:relative;"><div class="ob-bar" style="right:0;top:0;width:${pct}%;background:#26a69a;"></div><div class="ob-text"><span style="color:#26a69a;">${x[1].toFixed(4)}</span><span>$${x[0].toFixed(0)}</span></div></div>`;
+      }).join('');
+      const askBars = (ob.askWalls || []).map(x => {
+        const pct = (x[1] / maxQ * 100);
+        return `<div style="height:14px;margin:1px 0;position:relative;"><div class="ob-bar" style="left:0;top:0;width:${pct}%;background:#ef5350;"></div><div class="ob-text"><span>$${x[0].toFixed(0)}</span><span style="color:#ef5350;">${x[1].toFixed(4)}</span></div></div>`;
+      }).join('');
+
+      // Who's heavy
+      const bidTotal = (ob.bidWalls || []).reduce((s, x) => s + x[1], 0);
+      const askTotal = (ob.askWalls || []).reduce((s, x) => s + x[1], 0);
+      const heavySide = bidTotal > askTotal ? 'BUYERS' : 'SELLERS';
+      const heavyColor = heavySide === 'BUYERS' ? '#26a69a' : '#ef5350';
+
+      // Interpretation
+      const interp = `Reversal at $${ctrl.reversalLevel.toFixed(0)} (${ctrl.reversalDist > 0 ? '+' : ''}${ctrl.reversalDist}%). ${ctrl.controller.toUpperCase()} control with ${ctrl.evidences.orderBook} book. ${heavySide} heavy in book (${bidTotal > askTotal ? `${(bidTotal/askTotal).toFixed(1)}x` : `${(askTotal/bidTotal).toFixed(1)}x`} more volume). Weekly ${w.direction} ${w.range}% range.`;
+
+      return `<div class="col">
+        <h2>${name}</h2>
+        <div class="hdr">
+          <span class="price ${pc}" id="price_${name}USDT">$${a.price.toFixed(a.price > 1000 ? 0 : 2)}</span>
+          <span style="font-size:13px;" id="chg_${name}USDT" style="color:${pc}">${a.chg24h >= 0 ? '+' : ''}${a.chg24h}%</span>
+          <span class="bdg ${cb}">${ctrl.controller.toUpperCase()}</span>
+        </div>
+
+        <div class="l">Reversal · Imbalance</div>
+        <div class="v">Reversal: <span style="color:${rc};">$${ctrl.reversalLevel.toFixed(0)}</span> · Imbalance: <span style="color:${ctrl.imbalance > 0 ? '#26a69a' : '#ef5350'}">${ctrl.imbalance > 0 ? '+' : ''}${ctrl.imbalance}%</span></div>
+
+        <div class="l">Evidence</div>
+        <div class="v" style="font-size:9px;">OB: <span style="color:${ctrl.evidences.orderBook === 'buyers' ? '#26a69a' : '#ef5350'}">${ctrl.evidences.orderBook}</span> · PA: <span style="color:${ctrl.evidences.priceAction === 'buyers' ? '#26a69a' : '#ef5350'}">${ctrl.evidences.priceAction}</span> · Vol Δ: <span style="color:${ctrl.evidences.volumeDelta === 'buyers' ? '#26a69a' : '#ef5350'}">${ctrl.evidences.volumeDelta}</span></div>
+
+        <div class="l">Weekly · Key Levels</div>
+        <div class="v" style="font-size:9px;">$${w.low.toFixed(0)} – $${w.high.toFixed(0)} (${w.range}%) · ${w.direction.toUpperCase()}</div>
+        ${supp.map(s => `<div class="r"><span style="color:#26a69a;">▴ $${s.price.toFixed(0)}</span><span style="color:#6a6a7a;">${s.dist}%</span></div>`).join('')}
+        ${res.map(r => `<div class="r"><span style="color:#ef5350;">▾ $${r.price.toFixed(0)}</span><span style="color:#6a6a7a;">+${r.dist}%</span></div>`).join('')}
+
+        <div class="l">Volume · CVD</div>
+        <div class="v" style="font-size:10px;">Buy <span style="color:#26a69a;">${vol.buyRatio}%</span> · Sell <span style="color:#ef5350;">${vol.sellRatio}%</span> · CVD <span style="color:${s.cvdDirection === 'up' ? '#26a69a' : '#ef5350'}">${s.cvdDirection}</span></div>
+
+        <div class="l">Stats · Risk</div>
+        <div class="v" style="font-size:9px;">σ ${s.volatility}% · VaR95 <span style="color:#ef5350;">${s.var95}%</span> · H ${s.hurst} (${s.regime}) · Kurt ${s.kurtosis.toFixed(1)}</div>
+
+        <div class="l">Order Book</div>
+        <div class="v" style="font-size:9px;">Spread $${ob.spread} · Bid $${ob.bestBid.toFixed(0)} · Ask $${ob.bestAsk.toFixed(0)}</div>
+        <div class="ob">
+          <div class="ob-side" style="border-right:1px solid #2a2a3a;">${bidBars}</div>
+          <div class="ob-side">${askBars}</div>
+        </div>
+        <div class="heavy" style="background:${heavyColor === '#26a69a' ? '#0a1a10' : '#1a0a0a'};border:1px solid ${heavyColor};color:${heavyColor};">${heavySide} HEAVY (${bidTotal > askTotal ? `${(bidTotal/askTotal).toFixed(1)}x more bid` : `${(askTotal/bidTotal).toFixed(1)}x more ask`})</div>
+
+        <div class="interp">${interp}</div>
+      </div>`;
+    }).join('');
+    document.getElementById('cols').innerHTML = colsHtml;
+
+    // Correlation
+    if (corr?.names) {
+      const n = corr.names;
+      let h = '<table><tr><td></td>' + n.map(x => `<td style="font-weight:600;color:#6a6a7a;">${x}</td>`).join('') + '</tr>';
+      for (let i = 0; i < n.length; i++) {
+        h += `<tr><td style="font-weight:600;color:#6a6a7a;">${n[i]}</td>`;
+        for (let j = 0; j < n.length; j++) {
+          const v = corr.matrix[i][j];
+          h += `<td style="color:${Math.abs(v) > 0.7 ? '#ef5350' : Math.abs(v) > 0.4 ? '#f0c040' : '#6a6a7a'};">${v.toFixed(2)}</td>`;
+        }
+        h += '</tr>';
+      }
+      h += '</table>';
+      document.getElementById('corrMatrix').innerHTML = h;
+    }
+  }).catch(() => {});
+}
+
+function renderTechnical(t) {
+  if (!t) return;
+  const names = ['BTC', 'ETH', 'SOL', 'XAUT'];
+  const html = `<div class="tech"><h3>🔬 Technical & Mathematical Analysis</h3><div class="tech-g">${names.map(name => {
+    const a = t[name];
+    if (!a || a.error) return `<div class="tech-c"><div class="l">${name}</div><div style="font-size:10px;color:#ef5350;">Error</div></div>`;
+    const rsiC = a.rsi > 70 ? '#ef5350' : a.rsi < 30 ? '#26a69a' : '#c8c8d4';
+    const rsib = Math.min(100, Math.max(0, (a.rsi / 100) * 100));
+    const cmi = a.cmi || {};
+    const cmiScore = cmi.cmi || 0;
+    const cmiColor = cmi.signalColor || '#6a6a7a';
+    const cmiBar = Math.min(100, Math.max(0, (cmiScore + 100) / 2));
+    const bbHtml = `<div class="l">Market Pulse · Composite Score</div><div style="display:flex;align-items:center;gap:6px;">
+      <div class="tech-bar" style="flex:1;background:#1a1a28;"><div class="tech-fill" style="width:${cmiBar}%;background:${cmiColor};"></div></div>
+      <span style="color:${cmiColor};font-size:11px;font-weight:600;min-width:30px;">${cmiScore > 0 ? '+' : ''}${cmiScore}</span>
+    </div><div style="font-size:8px;color:#6a6a7a;">${cmi.signal || 'NEUTRAL'} · VWAP: ${cmi.vwapDist > 0 ? '+' : ''}${cmi.vwapDist}% · Vol: ${cmi.volRatio > 0 ? '+' : ''}${cmi.volRatio}% · CVD: ${cmi.cvdSlope > 0 ? '+' : ''}${cmi.cvdSlope}%</div>`;
+    const mac = a.macdHist.value > 0 ? '#26a69a' : '#ef5350';
+    const pats = (a.patterns || []).slice(-3).map(p => `<span class="pat ${p.dir === 'bullish' ? 'bull' : p.dir === 'bearish' ? 'bear' : 'neu'}">${p.type}</span>`).join('');
+    const ac = a.geometry?.angle < -30 ? '#ef5350' : a.geometry?.angle > 30 ? '#26a69a' : '#6a6a7a';
+    return `<div class="tech-c"><div style="font-weight:600;font-size:12px;border-bottom:1px solid #2a2a3a;padding-bottom:4px;margin-bottom:4px;">${name}</div>
+      <div class="l">RSI (14)</div><div style="display:flex;align-items:center;gap:6px;"><div class="tech-bar" style="flex:1;background:#1a1a28;"><div class="tech-fill" style="width:${rsib}%;background:${rsiC};"></div></div><span style="color:${rsiC};font-size:11px;font-weight:600;min-width:30px;">${a.rsi}</span></div>
+      ${bbHtml}
+      <div class="l">MACD</div><div class="v"><span style="color:${mac};">${a.macdHist.value} (${a.macdHist.direction})</span></div>
+      ${a.divergence ? `<div class="l">Divergence</div><div class="v" style="color:#f0c040;font-size:9px;">${a.divergence}</div>` : ''}
+      <div class="l">Candlestick Patterns</div><div style="margin:2px 0;">${pats || '<span style="font-size:9px;color:#6a6a7a;">None</span>'}</div>
+      <div class="l">Geometry</div><div class="v" style="font-size:9px;">Angle: <span style="color:${ac};">${a.geometry?.angle}°</span> · Ch: ${a.geometry?.channelWidthPct}%</div><div class="v" style="font-size:8px;color:#6a6a7a;">Fib 61.8: $${a.geometry?.fibonacci?.['61.8']?.toFixed(0)||'?'}</div>
+      <div class="l">Volume</div><div class="v" style="font-size:9px;">Buy <span style="color:#26a69a;">${a.volume.buyRatio}%</span> · Sell <span style="color:#ef5350;">${a.volume.sellRatio}%</span></div></div>`;
+  }).join('')}</div></div>`;
+  const existing = document.getElementById('techSection');
+  if (existing) existing.outerHTML = html;
+  else document.querySelector('.corr').insertAdjacentHTML('afterend', html);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  refresh(); setInterval(refresh, 30000);
+  setTimeout(() => { fetch('/api/crypto/technical').then(r => r.json()).then(renderTechnical).catch(() => {}); }, 2000);
+  setInterval(() => { fetch('/api/crypto/technical').then(r => r.json()).then(renderTechnical).catch(() => {}); }, 60000);
+  setTimeout(() => { fetch('/api/crypto/advanced').then(r => r.json()).then(renderAdvanced).catch(() => {}); }, 3000);
+  setInterval(() => { fetch('/api/crypto/advanced').then(r => r.json()).then(renderAdvanced).catch(() => {}); }, 60000);
+  setTimeout(() => { fetch('/api/snapshot/BTCUSDT').then(r => r.json()).then(d => {
+    renderMC(d);
+    fetch('/api/crypto/advanced').then(r2 => r2.json()).then(adv => renderEff(adv, d.price)).catch(() => {});
+  }).catch(() => {}); }, 4000);
+  setInterval(() => { fetch('/api/snapshot/BTCUSDT').then(r => r.json()).then(d => {
+    renderMC(d);
+    fetch('/api/crypto/advanced').then(r2 => r2.json()).then(adv => renderEff(adv, d.price)).catch(() => {});
+  }).catch(() => {}); }, 60000);
+});
+
+function renderMC(d) {
+  if (!d?.quantAnalysis) return;
+  const qa = d.quantAnalysis;
+  const mc = qa.monteCarlo || {};
+  const vol = qa.expectedMove?.daily1sigmaPct;
+  const hurst = qa.hurstExponent?.value;
+  const skew = qa.meanReversion?.zScore;
+  const autocorr = qa.autoCorrelation?.value;
+  const price = d.price;
+  
+  const mcHtml = [4, 24, 96].map(h => {
+    const hData = mc[`${h}h`] || mc[`${h}`];
+    if (!hData) return '';
+    const probUp = hData.probUp || 0;
+    const probDown = hData.probDown || 0;
+    const color = probUp > probDown ? '#26a69a' : '#ef5350';
+    return `<div style="flex:1;min-width:100px;background:#0f0f18;border-radius:6px;padding:8px;text-align:center;">
+      <div style="font-size:9px;color:#6a6a7a;">${h} Hour${h > 12 ? 's' : ''}</div>
+      <div style="font-size:16px;font-weight:700;color:#f0c040;">$${hData.target50?.toFixed(0) || '?'}</div>
+      <div style="font-size:10px;color:${color};">▲ ${probUp}% · ▼ ${probDown}%</div>
+      <div style="font-size:8px;color:#6a6a7a;">68%: $${hData.target25?.toFixed(0) || '?'}–$${hData.target75?.toFixed(0) || '?'}</div>
+      <div style="font-size:7px;color:#5a5a6a;">95%: $${hData.target5?.toFixed(0) || '?'}–$${hData.target95?.toFixed(0) || '?'}</div>
+    </div>`;
+  }).join('');
+  
+  const statsHtml = `
+    <div style="flex:1;min-width:120px;background:#0f0f18;border-radius:6px;padding:8px;">
+      <div style="font-size:9px;color:#6a6a7a;">Key Statistics</div>
+      <div style="font-size:10px;margin-top:4px;">
+        <div>Exp daily σ: <span style="color:#f0c040;">${vol || '?'}%</span></div>
+        <div>Hurst: <span style="color:${(hurst||0) > 0.6 ? '#26a69a' : (hurst||0) < 0.35 ? '#ab47bc' : '#6a6a7a'};">${hurst || '?'}</span> (${(hurst||0) > 0.6 ? 'trending' : (hurst||0) < 0.35 ? 'mean-reverting' : 'random'})</div>
+        <div>Autocorr: ${autocorr || '?'}</div>
+        <div>Z-scores: ${skew || '?'}</div>
+        <div>MC up prob: ${mc['24h']?.probUp || 0}% / ${mc['24h']?.probDown || 0}%</div>
+      </div>
+    </div>`;
+  
+  const interpHtml = `
+    <div style="flex:1.5;min-width:160px;background:#0f0f18;border-radius:6px;padding:8px;">
+      <div style="font-size:9px;color:#6a6a7a;">Interpretation</div>
+      <div style="font-size:9px;color:#b0b0c0;margin-top:4px;line-height:1.5;">
+        <b style="color:#e0e0ee;">24h outlook:</b> P50 $${mc['24h']?.target50?.toFixed(0) || '?'}<br>
+        <b style="color:#e0e0ee;">Range (68%):</b> $${mc['24h']?.target25?.toFixed(0) || '?'} – $${mc['24h']?.target75?.toFixed(0) || '?'}<br>
+        <b style="color:#e0e0ee;">Prob:</b> ▲${mc['24h']?.probUp||0}% / ▼${mc['24h']?.probDown||0}%<br>
+        <b style="color:#e0e0ee;">Market type:</b> ${(hurst||0) > 0.6 ? 'Trending' : (hurst||0) < 0.35 ? 'Mean-reverting' : 'Random walk'}
+      </div>
+    </div>`;
+  
+  document.getElementById('mcGrid').innerHTML = mcHtml + statsHtml + interpHtml;
+}
+
+function renderEff(adv, price) {
+  const effDiv = document.getElementById('mcGrid');
+  if (!effDiv) return;
+  const names = ['BTC', 'ETH', 'SOL', 'XAUT'];
+  const effHtml = names.map(name => {
+    const a = adv?.[name];
+    if (!a?.thrust) return '';
+    const t = a.thrust;
+    const v = a.volumeDominance || {};
+    const bEff = t.buyEfficiency || 0;
+    const sEff = t.sellEfficiency || 0;
+    const rbEff = t.recentBuyEff || 0;
+    const rsEff = t.recentSellEff || 0;
+    const overall = t.overall === 'buyers' ? '🟢' : t.overall === 'sellers' ? '🔴' : '⚪';
+    const recent = t.recent === 'buyers' ? '🟢' : t.recent === 'sellers' ? '🔴' : '⚪';
+    const leader = bEff > sEff ? 'BUYERS' : 'SELLERS';
+    const ratio = bEff > 0 && sEff > 0 ? (bEff / sEff).toFixed(2) : '1.0';
+    return `<div style="flex:1;min-width:120px;background:#0f0f18;border-radius:6px;padding:8px;text-align:center;">
+      <div style="font-weight:600;font-size:12px;margin-bottom:4px;">${name}</div>
+      <div style="font-size:10px;">${overall} ${t.overall?.toUpperCase()} (eff)</div>
+      <div style="font-size:8px;color:#6a6a7a;">Recent: ${recent} ${t.recent?.toUpperCase()}</div>
+      <div style="margin-top:4px;font-size:9px;">
+        <span style="color:#26a69a;">Buy ${bEff}</span> · <span style="color:#ef5350;">Sell ${sEff}</span>
+      </div>
+      <div style="font-size:8px;color:#6a6a7a;">Ratio: ${ratio}x · ${leader} ${bEff > sEff ? 'more efficient' : 'less efficient'}</div>
+      <div style="margin-top:2px;font-size:7px;color:#5a5a6a;">Recent: Buy ${rbEff} / Sell ${rsEff}</div>
+      <div style="margin-top:2px;font-size:8px;color:${v.overallRatio > 55 ? '#26a69a' : v.overallRatio < 45 ? '#ef5350' : '#6a6a7a'};">Vol: ${v.overallRatio || '?'}% ${v.overall || ''}</div>
+    </div>`;
+  }).join('');
+  if (effHtml) {
+    effDiv.innerHTML += effHtml;
+  }
+}
+
+function renderAdvanced(d) {
+  if (!d) return;
+  const names = ['BTC', 'ETH', 'SOL', 'XAUT'];
+  const html = `<div class="adv-g">${names.map(name => {
+    const a = d[name];
+    if (!a || a.error) return `<div class="adv-c"><div class="l">${name}</div><div style="font-size:10px;color:#ef5350;">Error</div></div>`;
+    const m = a.markov || {};
+    const v = a.volumeDominance || {};
+    const t = a.thrust || {};
+    const w = a.whales || {};
+    const next = m.nextRegime || {};
+    const curr = m.currentRegime || '?';
+    const nxt = next.predicted || '?';
+    const nxtProb = next.probability || 0;
+    const currColor = curr === 'BULL' ? '#26a69a' : curr === 'BEAR' ? '#ef5350' : '#f0c040';
+    const nxtColor = nxt === 'BULL' ? '#26a69a' : nxt === 'BEAR' ? '#ef5350' : '#f0c040';
+    const volColor = (v.overallRatio || 50) > 55 ? '#26a69a' : (v.overallRatio || 50) < 45 ? '#ef5350' : '#f0c040';
+    const thrustColor = t.overall === 'buyers' ? '#26a69a' : t.overall === 'sellers' ? '#ef5350' : '#6a6a7a';
+    const recentThrustColor = t.recent === 'buyers' ? '#26a69a' : t.recent === 'sellers' ? '#ef5350' : '#6a6a7a';
+    const whalesFlow = (w.netWhaleFlow || 0);
+    const wfColor = whalesFlow > 0 ? '#26a69a' : '#ef5350';
+    const whaleList = (w.recentWhales || []).slice(-3).map(wl => 
+      `<div class="whale ${wl.side === 'buy' ? 'b' : 's'}">${wl.side === 'buy' ? '▲' : '▼'} \$${wl.usd.toFixed(0)} @ \$${wl.price.toFixed(0)} (z=${wl.zScore})</div>`
+    ).join('');
+    const statDist = m.stationaryDistribution || {};
+    const regimes = ['BULL','BEAR','RANGE'];
+    const maxRegime = regimes.reduce((a, b) => (statDist[a]||0) > (statDist[b]||0) ? a : b, 'RANGE');
+    
+    return `<div class="adv-c">
+      <div style="font-weight:600;font-size:12px;border-bottom:1px solid #2a2a3a;padding-bottom:4px;margin-bottom:4px;">${name} · <span style="color:${currColor};">${curr}</span> → <span style="color:${nxtColor};">${nxt}</span> (${nxtProb}%)</div>
+      
+      <div class="l">Markov Chain · Stationary Dist</div>
+      <div class="pr">${regimes.map(r => {
+        const p = statDist[r] || 0;
+        const c = r === 'BULL' ? '#26a69a' : r === 'BEAR' ? '#ef5350' : '#f0c040';
+        return `<div class="pr-f" style="width:${p}%;background:${c};"></div>`;
+      }).join('')}</div>
+      <div class="v" style="font-size:8px;">🟢${statDist.BULL||0}% · 🔴${statDist.BEAR||0}% · 🟡${statDist.RANGE||0}% · <span style="color:#6a6a7a;">Long-term: ${maxRegime}</span></div>
+      
+      <div class="l">Volume Dominance</div>
+      <div class="pr"><div class="pr-f" style="width:${v.overallRatio||50}%;background:${volColor};"></div></div>
+      <div class="v" style="font-size:9px;">Buy <span style="color:${v.overallRatio > 50 ? '#26a69a' : '#6a6a7a'};">${v.overallRatio}%</span> · Sell <span style="color:${v.overallRatio < 50 ? '#ef5350' : '#6a6a7a'};">${100 - (v.overallRatio||50)}%</span> · Overall: <span style="color:${volColor};">${(v.overallRatio||50) > 55 ? 'BUYERS' : (v.overallRatio||50) < 45 ? 'SELLERS' : 'NEUTRAL'}</span></div>
+      
+      <div class="l">Thrust · Who Moves Price Easily</div>
+      <div class="v" style="font-size:9px;">Overall: <span style="color:${thrustColor};">${t.overall?.toUpperCase() || '?'}</span> · Recent: <span style="color:${recentThrustColor};">${t.recent?.toUpperCase() || '?'}</span></div>
+      <div class="v" style="font-size:8px;color:#6a6a7a;">Buy eff: ${t.buyEfficiency||0} · Sell eff: ${t.sellEfficiency||0}</div>
+      
+      <div class="l">Whale Trades (last 100)</div>
+      <div class="v" style="font-size:9px;">${w.whaleCount||0} whales · Buy ${w.buyWhales||0} / Sell ${w.sellWhales||0} · Net: <span style="color:${wfColor};">${whalesFlow > 0 ? '+' : ''}$${(whalesFlow/1000).toFixed(0)}K</span></div>
+      ${whaleList || '<div class="whale" style="color:#6a6a7a;">No recent whales</div>'}
+      
+      <div class="l">Interpretation</div>
+      <div class="v" style="font-size:8px;color:#b0b0c0;">${m.interpretation || ''}</div>
+    </div>`;
+  }).join('')}</div>`;
+  document.getElementById('advGrid').innerHTML = html;
+}
+</script>
+</body>
+</html>
