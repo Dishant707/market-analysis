@@ -108,6 +108,7 @@ function startEngine() {
   engine.stderr.on('data', () => {});
   engine.on('close', () => { engine = null; ready = false; for (const p of pending) p.reject(new Error('died')); pending = []; setTimeout(startEngine, 3000); });
   engine.on('error', () => { engine = null; ready = false; });
+  } catch (_) { console.log('  Engine start failed — running without Rust analysis'); }
 }
 
 function rustCall(action, data) {
