@@ -8,6 +8,7 @@ import { computeEdgeLevels, isNearEdgeLevel } from './edge-levels.mjs';
 import { fetchKlines, fetchTicker } from './twelvedata.mjs';
 import { fetchFearGreed, getFgScore } from './sentiment.mjs';
 import { fetchAllOnchain, formatOnchainAlert } from './coinglass.mjs';
+import { fetchAllSentiment } from './finnhub.mjs';
 
 function round(n, d = 2) { return Math.round(n * 10 ** d) / 10 ** d; }
 
@@ -164,12 +165,14 @@ export async function computeUnifiedSignal(symbol, externalData = {}) {
     // ─── 5. SENTIMENT / ON-CHAIN (10%) ─────────
     let sentiScore = 0;
     try {
-      const [fg, onchain] = await Promise.allSettled([
+      const [fg, onchain, news] = await Promise.allSettled([
         fetchFearGreed(),
         fetchAllOnchain('BTCUSDT'),
+        fetchAllSentiment(),
       ]);
       if (fg.status === 'fulfilled' && fg.value) sentiScore += getFgScore(fg.value.value);
       if (onchain.status === 'fulfilled' && onchain.value) sentiScore += (onchain.value.compositeScore || 0);
+      if (news.status === 'fulfilled' && news.value) sentiScore += (news.value.compositeScore || 0) * 0.3;
     } catch (_) {}
 
     // ─── 6. WEIGHTED COMPOSITE ─────────────────

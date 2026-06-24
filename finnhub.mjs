@@ -6,16 +6,17 @@
 
 const FH = 'https://finnhub.io/api/v1';
 
+import fs from 'fs';
+
 // Set your key in .env: FINNHUB_KEY=your_key
 function getKey() {
   try {
-    const fs = require('fs');
     const env = fs.existsSync('.env') ? fs.readFileSync('.env', 'utf8') : '';
     const match = env.match(/FINNHUB_KEY=(.+)/);
     return match ? match[1].trim() : '';
   } catch (_) { return ''; }
 }
-const API_KEY = getKey() || process.env.FINNHUB_KEY || 'demo';
+const API_KEY = getKey() || process.env.FINNHUB_KEY || '';
 
 // ─── Crypto News ────────────────────────────────
 export async function fetchCryptoNews() {
