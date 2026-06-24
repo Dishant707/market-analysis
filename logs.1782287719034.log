@@ -1,0 +1,353 @@
+2026-06-24T07:53:02.163148068Z [err]      at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:617:12)
+2026-06-24T07:53:02.163156805Z [err]      at #createModuleJob (node:internal/modules/esm/loader:640:36)
+2026-06-24T07:53:02.163160995Z [err]      at #getJobFromResolveResult (node:internal/modules/esm/loader:353:34)
+2026-06-24T07:53:02.163165145Z [err]      at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:321:41)
+2026-06-24T07:53:02.163168678Z [err]      at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:680:25)
+2026-06-24T07:53:02.163173038Z [err]  
+2026-06-24T07:53:02.163177252Z [err]  Node.js v22.22.3
+2026-06-24T07:53:02.163213693Z [err]  file:///app/deploy.mjs:111
+2026-06-24T07:53:02.163217464Z [err]  }
+2026-06-24T07:53:02.163220904Z [err]  ^
+2026-06-24T07:53:02.163225107Z [err]  
+2026-06-24T07:53:02.163228794Z [err]  SyntaxError: Missing catch or finally after try
+2026-06-24T07:53:02.163232070Z [err]      at compileSourceTextModule (node:internal/modules/esm/utils:346:16)
+2026-06-24T07:53:02.163235256Z [err]      at ModuleLoader.moduleStrategy (node:internal/modules/esm/translators:110:18)
+2026-06-24T07:53:02.163238714Z [err]      at #translate (node:internal/modules/esm/loader:559:20)
+2026-06-24T07:53:02.163242140Z [err]      at afterLoad (node:internal/modules/esm/loader:612:29)
+2026-06-24T07:53:02.328069918Z [inf]  Starting Container
+2026-06-24T07:53:02.388278291Z [err]  file:///app/deploy.mjs:111
+2026-06-24T07:53:02.388285873Z [err]  }
+2026-06-24T07:53:02.388292766Z [err]  ^
+2026-06-24T07:53:02.388297041Z [err]  
+2026-06-24T07:53:02.388300959Z [err]  SyntaxError: Missing catch or finally after try
+2026-06-24T07:53:02.388305716Z [err]      at compileSourceTextModule (node:internal/modules/esm/utils:346:16)
+2026-06-24T07:53:02.388309262Z [err]      at ModuleLoader.moduleStrategy (node:internal/modules/esm/translators:110:18)
+2026-06-24T07:53:02.388313184Z [err]      at #translate (node:internal/modules/esm/loader:559:20)
+2026-06-24T07:53:02.388316368Z [err]      at afterLoad (node:internal/modules/esm/loader:612:29)
+2026-06-24T07:53:02.388321103Z [err]      at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:617:12)
+2026-06-24T07:53:02.388325306Z [err]      at #createModuleJob (node:internal/modules/esm/loader:640:36)
+2026-06-24T07:53:02.388329041Z [err]      at #getJobFromResolveResult (node:internal/modules/esm/loader:353:34)
+2026-06-24T07:53:02.388332669Z [err]      at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:321:41)
+2026-06-24T07:53:02.388336115Z [err]      at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:680:25)
+2026-06-24T07:53:02.388341476Z [err]  
+2026-06-24T07:53:02.388344880Z [err]  Node.js v22.22.3
+2026-06-24T07:53:03.386700713Z [err]  file:///app/deploy.mjs:111
+2026-06-24T07:53:03.386703307Z [err]      at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:680:25)
+2026-06-24T07:53:03.386709711Z [err]  }
+2026-06-24T07:53:03.386716582Z [err]  
+2026-06-24T07:53:03.386716823Z [err]  ^
+2026-06-24T07:53:03.386725503Z [err]  Node.js v22.22.3
+2026-06-24T07:53:03.386725775Z [err]  
+2026-06-24T07:53:03.386731040Z [err]  SyntaxError: Missing catch or finally after try
+2026-06-24T07:53:03.386735517Z [err]      at compileSourceTextModule (node:internal/modules/esm/utils:346:16)
+2026-06-24T07:53:03.386740498Z [err]      at ModuleLoader.moduleStrategy (node:internal/modules/esm/translators:110:18)
+2026-06-24T07:53:03.386744750Z [err]      at #translate (node:internal/modules/esm/loader:559:20)
+2026-06-24T07:53:03.386748618Z [err]      at afterLoad (node:internal/modules/esm/loader:612:29)
+2026-06-24T07:53:03.386752497Z [err]      at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:617:12)
+2026-06-24T07:53:03.386756037Z [err]      at #createModuleJob (node:internal/modules/esm/loader:640:36)
+2026-06-24T07:53:03.386760279Z [err]      at #getJobFromResolveResult (node:internal/modules/esm/loader:353:34)
+2026-06-24T07:53:03.386764187Z [err]      at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:321:41)
+2026-06-24T07:53:04.505020629Z [err]  file:///app/deploy.mjs:111
+2026-06-24T07:53:04.505031419Z [err]  }
+2026-06-24T07:53:04.505036445Z [err]  ^
+2026-06-24T07:53:04.505040896Z [err]  
+2026-06-24T07:53:04.505044701Z [err]  SyntaxError: Missing catch or finally after try
+2026-06-24T07:53:04.505050099Z [err]      at compileSourceTextModule (node:internal/modules/esm/utils:346:16)
+2026-06-24T07:53:04.505053520Z [err]      at ModuleLoader.moduleStrategy (node:internal/modules/esm/translators:110:18)
+2026-06-24T07:53:04.505057025Z [err]      at #translate (node:internal/modules/esm/loader:559:20)
+2026-06-24T07:53:04.505060286Z [err]      at afterLoad (node:internal/modules/esm/loader:612:29)
+2026-06-24T07:53:04.505063880Z [err]      at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:617:12)
+2026-06-24T07:53:04.505067551Z [err]      at #createModuleJob (node:internal/modules/esm/loader:640:36)
+2026-06-24T07:53:04.505072037Z [err]      at #getJobFromResolveResult (node:internal/modules/esm/loader:353:34)
+2026-06-24T07:53:04.505075365Z [err]      at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:321:41)
+2026-06-24T07:53:04.505078527Z [err]      at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:680:25)
+2026-06-24T07:53:04.505081553Z [err]  
+2026-06-24T07:53:04.505084675Z [err]  Node.js v22.22.3
+2026-06-24T07:53:05.574876930Z [err]      at #createModuleJob (node:internal/modules/esm/loader:640:36)
+2026-06-24T07:53:05.574889703Z [err]      at #getJobFromResolveResult (node:internal/modules/esm/loader:353:34)
+2026-06-24T07:53:05.574893061Z [err]  file:///app/deploy.mjs:111
+2026-06-24T07:53:05.574897154Z [err]      at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:321:41)
+2026-06-24T07:53:05.574897991Z [err]  }
+2026-06-24T07:53:05.574901573Z [err]      at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:680:25)
+2026-06-24T07:53:05.574903391Z [err]  ^
+2026-06-24T07:53:05.574907963Z [err]  
+2026-06-24T07:53:05.574908243Z [err]  
+2026-06-24T07:53:05.574913446Z [err]  SyntaxError: Missing catch or finally after try
+2026-06-24T07:53:05.574914220Z [err]  Node.js v22.22.3
+2026-06-24T07:53:05.574916939Z [err]      at compileSourceTextModule (node:internal/modules/esm/utils:346:16)
+2026-06-24T07:53:05.574920207Z [err]      at ModuleLoader.moduleStrategy (node:internal/modules/esm/translators:110:18)
+2026-06-24T07:53:05.574923598Z [err]      at #translate (node:internal/modules/esm/loader:559:20)
+2026-06-24T07:53:05.574926755Z [err]      at afterLoad (node:internal/modules/esm/loader:612:29)
+2026-06-24T07:53:05.574930366Z [err]      at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:617:12)
+2026-06-24T07:53:06.449169951Z [err]  file:///app/deploy.mjs:111
+2026-06-24T07:53:06.449181665Z [err]  }
+2026-06-24T07:53:06.449187302Z [err]  ^
+2026-06-24T07:53:06.449191781Z [err]  
+2026-06-24T07:53:06.449195672Z [err]  SyntaxError: Missing catch or finally after try
+2026-06-24T07:53:06.449199569Z [err]      at compileSourceTextModule (node:internal/modules/esm/utils:346:16)
+2026-06-24T07:53:06.449202780Z [err]      at ModuleLoader.moduleStrategy (node:internal/modules/esm/translators:110:18)
+2026-06-24T07:53:06.449206210Z [err]      at #translate (node:internal/modules/esm/loader:559:20)
+2026-06-24T07:53:06.449209744Z [err]      at afterLoad (node:internal/modules/esm/loader:612:29)
+2026-06-24T07:53:06.449213042Z [err]      at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:617:12)
+2026-06-24T07:53:06.449216396Z [err]      at #createModuleJob (node:internal/modules/esm/loader:640:36)
+2026-06-24T07:53:06.449219991Z [err]      at #getJobFromResolveResult (node:internal/modules/esm/loader:353:34)
+2026-06-24T07:53:06.449223118Z [err]      at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:321:41)
+2026-06-24T07:53:06.449230169Z [err]      at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:680:25)
+2026-06-24T07:53:06.449233350Z [err]  
+2026-06-24T07:53:06.449236558Z [err]  Node.js v22.22.3
+2026-06-24T07:53:07.465951664Z [err]      at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:680:25)
+2026-06-24T07:53:07.465961151Z [err]  
+2026-06-24T07:53:07.465964483Z [err]  file:///app/deploy.mjs:111
+2026-06-24T07:53:07.465968041Z [err]  Node.js v22.22.3
+2026-06-24T07:53:07.465970070Z [err]  }
+2026-06-24T07:53:07.465973184Z [err]  ^
+2026-06-24T07:53:07.465976374Z [err]  
+2026-06-24T07:53:07.465979461Z [err]  SyntaxError: Missing catch or finally after try
+2026-06-24T07:53:07.465982742Z [err]      at compileSourceTextModule (node:internal/modules/esm/utils:346:16)
+2026-06-24T07:53:07.465985796Z [err]      at ModuleLoader.moduleStrategy (node:internal/modules/esm/translators:110:18)
+2026-06-24T07:53:07.465989726Z [err]      at #translate (node:internal/modules/esm/loader:559:20)
+2026-06-24T07:53:07.465992706Z [err]      at afterLoad (node:internal/modules/esm/loader:612:29)
+2026-06-24T07:53:07.465995566Z [err]      at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:617:12)
+2026-06-24T07:53:07.465998479Z [err]      at #createModuleJob (node:internal/modules/esm/loader:640:36)
+2026-06-24T07:53:07.466001351Z [err]      at #getJobFromResolveResult (node:internal/modules/esm/loader:353:34)
+2026-06-24T07:53:07.466004021Z [err]      at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:321:41)
+2026-06-24T07:53:08.457311998Z [err]  file:///app/deploy.mjs:111
+2026-06-24T07:53:08.457319770Z [err]  }
+2026-06-24T07:53:08.457323757Z [err]  ^
+2026-06-24T07:53:08.457327038Z [err]  
+2026-06-24T07:53:08.457331115Z [err]  SyntaxError: Missing catch or finally after try
+2026-06-24T07:53:08.457334962Z [err]      at compileSourceTextModule (node:internal/modules/esm/utils:346:16)
+2026-06-24T07:53:08.457338418Z [err]      at ModuleLoader.moduleStrategy (node:internal/modules/esm/translators:110:18)
+2026-06-24T07:53:08.457341955Z [err]      at #translate (node:internal/modules/esm/loader:559:20)
+2026-06-24T07:53:08.457345007Z [err]      at afterLoad (node:internal/modules/esm/loader:612:29)
+2026-06-24T07:53:08.457348109Z [err]      at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:617:12)
+2026-06-24T07:53:08.457351543Z [err]      at #createModuleJob (node:internal/modules/esm/loader:640:36)
+2026-06-24T07:53:08.457354547Z [err]      at #getJobFromResolveResult (node:internal/modules/esm/loader:353:34)
+2026-06-24T07:53:08.457357868Z [err]      at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:321:41)
+2026-06-24T07:53:08.457360840Z [err]      at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:680:25)
+2026-06-24T07:53:08.457363967Z [err]  
+2026-06-24T07:53:08.457366851Z [err]  Node.js v22.22.3
+2026-06-24T07:53:09.779576480Z [err]  file:///app/deploy.mjs:111
+2026-06-24T07:53:09.779581781Z [err]  }
+2026-06-24T07:53:09.779585691Z [err]  ^
+2026-06-24T07:53:09.779588993Z [err]  
+2026-06-24T07:53:09.779592302Z [err]  SyntaxError: Missing catch or finally after try
+2026-06-24T07:53:09.779595196Z [err]      at compileSourceTextModule (node:internal/modules/esm/utils:346:16)
+2026-06-24T07:53:09.779598203Z [err]      at ModuleLoader.moduleStrategy (node:internal/modules/esm/translators:110:18)
+2026-06-24T07:53:09.779602238Z [err]      at #translate (node:internal/modules/esm/loader:559:20)
+2026-06-24T07:53:09.779605104Z [err]      at afterLoad (node:internal/modules/esm/loader:612:29)
+2026-06-24T07:53:09.779608210Z [err]      at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:617:12)
+2026-06-24T07:53:09.779611048Z [err]      at #createModuleJob (node:internal/modules/esm/loader:640:36)
+2026-06-24T07:53:09.779613696Z [err]      at #getJobFromResolveResult (node:internal/modules/esm/loader:353:34)
+2026-06-24T07:53:09.779616761Z [err]      at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:321:41)
+2026-06-24T07:53:09.779619845Z [err]      at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:680:25)
+2026-06-24T07:53:09.779623057Z [err]  
+2026-06-24T07:53:09.779626079Z [err]  Node.js v22.22.3
+2026-06-24T07:53:10.808432797Z [err]  file:///app/deploy.mjs:111
+2026-06-24T07:53:10.808436630Z [err]  }
+2026-06-24T07:53:10.808439762Z [err]  ^
+2026-06-24T07:53:10.808443247Z [err]  
+2026-06-24T07:53:10.808446476Z [err]  SyntaxError: Missing catch or finally after try
+2026-06-24T07:53:10.808449561Z [err]      at compileSourceTextModule (node:internal/modules/esm/utils:346:16)
+2026-06-24T07:53:10.808453291Z [err]      at ModuleLoader.moduleStrategy (node:internal/modules/esm/translators:110:18)
+2026-06-24T07:53:10.808456380Z [err]      at #translate (node:internal/modules/esm/loader:559:20)
+2026-06-24T07:53:10.808459766Z [err]      at afterLoad (node:internal/modules/esm/loader:612:29)
+2026-06-24T07:53:10.808463403Z [err]      at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:617:12)
+2026-06-24T07:53:10.808466789Z [err]      at #createModuleJob (node:internal/modules/esm/loader:640:36)
+2026-06-24T07:53:10.808469807Z [err]      at #getJobFromResolveResult (node:internal/modules/esm/loader:353:34)
+2026-06-24T07:53:10.808472569Z [err]      at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:321:41)
+2026-06-24T07:53:10.808475379Z [err]      at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:680:25)
+2026-06-24T07:53:10.808478249Z [err]  
+2026-06-24T07:53:10.808481152Z [err]  Node.js v22.22.3
+2026-06-24T07:53:11.828029329Z [err]      at #createModuleJob (node:internal/modules/esm/loader:640:36)
+2026-06-24T07:53:11.828058156Z [err]  file:///app/deploy.mjs:111
+2026-06-24T07:53:11.828065192Z [err]      at #getJobFromResolveResult (node:internal/modules/esm/loader:353:34)
+2026-06-24T07:53:11.828066352Z [err]  }
+2026-06-24T07:53:11.828071136Z [err]      at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:321:41)
+2026-06-24T07:53:11.828074779Z [err]  ^
+2026-06-24T07:53:11.828076490Z [err]      at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:680:25)
+2026-06-24T07:53:11.828083140Z [err]  
+2026-06-24T07:53:11.828083669Z [err]  
+2026-06-24T07:53:11.828088273Z [err]  Node.js v22.22.3
+2026-06-24T07:53:11.828090577Z [err]  SyntaxError: Missing catch or finally after try
+2026-06-24T07:53:11.828095143Z [err]      at compileSourceTextModule (node:internal/modules/esm/utils:346:16)
+2026-06-24T07:53:11.828101066Z [err]      at ModuleLoader.moduleStrategy (node:internal/modules/esm/translators:110:18)
+2026-06-24T07:53:11.828105245Z [err]      at #translate (node:internal/modules/esm/loader:559:20)
+2026-06-24T07:53:11.828109658Z [err]      at afterLoad (node:internal/modules/esm/loader:612:29)
+2026-06-24T07:53:11.828113786Z [err]      at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:617:12)
+2026-06-24T07:55:02.861925550Z [err]      at #createModuleJob (node:internal/modules/esm/loader:640:36)
+2026-06-24T07:55:02.861927780Z [err]  ^
+2026-06-24T07:55:02.861931729Z [err]      at #getJobFromResolveResult (node:internal/modules/esm/loader:353:34)
+2026-06-24T07:55:02.861935890Z [err]  
+2026-06-24T07:55:02.861937851Z [err]      at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:321:41)
+2026-06-24T07:55:02.861943104Z [err]      at ModuleLoader.moduleStrategy (node:internal/modules/esm/translators:110:18)
+2026-06-24T07:55:02.861943448Z [err]  SyntaxError: Missing catch or finally after try
+2026-06-24T07:55:02.861944173Z [err]      at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:680:25)
+2026-06-24T07:55:02.861950988Z [err]  
+2026-06-24T07:55:02.861952121Z [err]      at compileSourceTextModule (node:internal/modules/esm/utils:346:16)
+2026-06-24T07:55:02.861954034Z [err]      at #translate (node:internal/modules/esm/loader:559:20)
+2026-06-24T07:55:02.861960021Z [err]  file:///app/deploy.mjs:111
+2026-06-24T07:55:02.861960269Z [err]      at ModuleLoader.moduleStrategy (node:internal/modules/esm/translators:110:18)
+2026-06-24T07:55:02.861964290Z [err]      at afterLoad (node:internal/modules/esm/loader:612:29)
+2026-06-24T07:55:02.861964401Z [err]  Node.js v22.22.3
+2026-06-24T07:55:02.861969310Z [err]      at #translate (node:internal/modules/esm/loader:559:20)
+2026-06-24T07:55:02.861970588Z [err]  }
+2026-06-24T07:55:02.861972481Z [err]      at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:617:12)
+2026-06-24T07:55:02.861977054Z [err]  ^
+2026-06-24T07:55:02.861977197Z [err]  file:///app/deploy.mjs:111
+2026-06-24T07:55:02.861985000Z [err]  }
+2026-06-24T07:55:02.861985385Z [err]  
+2026-06-24T07:55:02.861989618Z [err]  SyntaxError: Missing catch or finally after try
+2026-06-24T07:55:02.861994570Z [err]      at compileSourceTextModule (node:internal/modules/esm/utils:346:16)
+2026-06-24T07:55:02.863112629Z [err]      at #getJobFromResolveResult (node:internal/modules/esm/loader:353:34)
+2026-06-24T07:55:02.863113180Z [err]      at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:617:12)
+2026-06-24T07:55:02.863119305Z [err]      at #createModuleJob (node:internal/modules/esm/loader:640:36)
+2026-06-24T07:55:02.863121479Z [err]      at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:321:41)
+2026-06-24T07:55:02.863125150Z [err]      at #getJobFromResolveResult (node:internal/modules/esm/loader:353:34)
+2026-06-24T07:55:02.863127341Z [err]      at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:680:25)
+2026-06-24T07:55:02.863130257Z [err]      at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:321:41)
+2026-06-24T07:55:02.863133629Z [err]      at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:680:25)
+2026-06-24T07:55:02.863137300Z [err]  
+2026-06-24T07:55:02.863140708Z [err]  Node.js v22.22.3
+2026-06-24T07:55:02.863143994Z [err]  file:///app/deploy.mjs:111
+2026-06-24T07:55:02.863148124Z [err]  }
+2026-06-24T07:55:02.863162145Z [err]  ^
+2026-06-24T07:55:02.863165656Z [err]  
+2026-06-24T07:55:02.863169033Z [err]  SyntaxError: Missing catch or finally after try
+2026-06-24T07:55:02.863172646Z [err]      at compileSourceTextModule (node:internal/modules/esm/utils:346:16)
+2026-06-24T07:55:02.863175995Z [err]      at ModuleLoader.moduleStrategy (node:internal/modules/esm/translators:110:18)
+2026-06-24T07:55:02.863180084Z [err]      at #translate (node:internal/modules/esm/loader:559:20)
+2026-06-24T07:55:02.863182112Z [err]      at afterLoad (node:internal/modules/esm/loader:612:29)
+2026-06-24T07:55:02.863184919Z [err]      at afterLoad (node:internal/modules/esm/loader:612:29)
+2026-06-24T07:55:02.863188169Z [err]      at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:617:12)
+2026-06-24T07:55:02.863191087Z [err]      at #createModuleJob (node:internal/modules/esm/loader:640:36)
+2026-06-24T07:55:02.865056908Z [err]  
+2026-06-24T07:55:02.865057891Z [err]      at #createModuleJob (node:internal/modules/esm/loader:640:36)
+2026-06-24T07:55:02.865062723Z [err]      at ModuleLoader.moduleStrategy (node:internal/modules/esm/translators:110:18)
+2026-06-24T07:55:02.865065832Z [err]  Node.js v22.22.3
+2026-06-24T07:55:02.865066526Z [err]      at #getJobFromResolveResult (node:internal/modules/esm/loader:353:34)
+2026-06-24T07:55:02.865069502Z [err]      at #translate (node:internal/modules/esm/loader:559:20)
+2026-06-24T07:55:02.865071708Z [err]      at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:321:41)
+2026-06-24T07:55:02.865075552Z [err]      at afterLoad (node:internal/modules/esm/loader:612:29)
+2026-06-24T07:55:02.865077591Z [err]      at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:680:25)
+2026-06-24T07:55:02.865082431Z [err]  
+2026-06-24T07:55:02.865082672Z [err]      at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:617:12)
+2026-06-24T07:55:02.865088069Z [err]  Node.js v22.22.3
+2026-06-24T07:55:02.865090839Z [err]  }
+2026-06-24T07:55:02.865093657Z [err]  file:///app/deploy.mjs:111
+2026-06-24T07:55:02.865099485Z [err]  ^
+2026-06-24T07:55:02.865104149Z [err]  
+2026-06-24T07:55:02.865108538Z [err]  SyntaxError: Missing catch or finally after try
+2026-06-24T07:55:02.865112670Z [err]      at compileSourceTextModule (node:internal/modules/esm/utils:346:16)
+2026-06-24T07:55:03.291834509Z [err]  file:///app/deploy.mjs:111
+2026-06-24T07:55:03.291845770Z [err]  }
+2026-06-24T07:55:03.291850097Z [err]  ^
+2026-06-24T07:55:03.291853754Z [err]  
+2026-06-24T07:55:03.291857546Z [err]  SyntaxError: Missing catch or finally after try
+2026-06-24T07:55:03.291861838Z [err]      at compileSourceTextModule (node:internal/modules/esm/utils:346:16)
+2026-06-24T07:55:03.291866883Z [err]      at ModuleLoader.moduleStrategy (node:internal/modules/esm/translators:110:18)
+2026-06-24T07:55:03.291871539Z [err]      at #translate (node:internal/modules/esm/loader:559:20)
+2026-06-24T07:55:03.291875986Z [err]      at afterLoad (node:internal/modules/esm/loader:612:29)
+2026-06-24T07:55:03.291880512Z [err]      at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:617:12)
+2026-06-24T07:55:03.291884352Z [err]      at #createModuleJob (node:internal/modules/esm/loader:640:36)
+2026-06-24T07:55:03.291887894Z [err]      at #getJobFromResolveResult (node:internal/modules/esm/loader:353:34)
+2026-06-24T07:55:03.291891095Z [err]      at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:321:41)
+2026-06-24T07:55:03.291894296Z [err]      at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:680:25)
+2026-06-24T07:55:03.291898687Z [err]  
+2026-06-24T07:55:03.291901729Z [err]  Node.js v22.22.3
+2026-06-24T07:55:04.171274420Z [err]      at #createModuleJob (node:internal/modules/esm/loader:640:36)
+2026-06-24T07:55:04.171280459Z [err]      at #getJobFromResolveResult (node:internal/modules/esm/loader:353:34)
+2026-06-24T07:55:04.171288588Z [err]  SyntaxError: Missing catch or finally after try
+2026-06-24T07:55:04.171292843Z [err]      at compileSourceTextModule (node:internal/modules/esm/utils:346:16)
+2026-06-24T07:55:04.171296145Z [err]      at ModuleLoader.moduleStrategy (node:internal/modules/esm/translators:110:18)
+2026-06-24T07:55:04.171300304Z [err]      at #translate (node:internal/modules/esm/loader:559:20)
+2026-06-24T07:55:04.171304667Z [err]      at afterLoad (node:internal/modules/esm/loader:612:29)
+2026-06-24T07:55:04.171309879Z [err]  file:///app/deploy.mjs:111
+2026-06-24T07:55:04.171311355Z [err]      at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:617:12)
+2026-06-24T07:55:04.171316517Z [err]  }
+2026-06-24T07:55:04.171319906Z [err]  ^
+2026-06-24T07:55:04.171324674Z [err]  
+2026-06-24T07:55:04.171337813Z [err]      at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:321:41)
+2026-06-24T07:55:04.171344955Z [err]      at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:680:25)
+2026-06-24T07:55:04.171349319Z [err]  
+2026-06-24T07:55:04.171354185Z [err]  Node.js v22.22.3
+2026-06-24T07:55:05.150278003Z [err]  file:///app/deploy.mjs:111
+2026-06-24T07:55:05.150282855Z [err]  }
+2026-06-24T07:55:05.150286010Z [err]  ^
+2026-06-24T07:55:05.150289914Z [err]  
+2026-06-24T07:55:05.150293011Z [err]  SyntaxError: Missing catch or finally after try
+2026-06-24T07:55:05.150296046Z [err]      at compileSourceTextModule (node:internal/modules/esm/utils:346:16)
+2026-06-24T07:55:05.150299055Z [err]      at ModuleLoader.moduleStrategy (node:internal/modules/esm/translators:110:18)
+2026-06-24T07:55:05.150301891Z [err]      at #translate (node:internal/modules/esm/loader:559:20)
+2026-06-24T07:55:05.150305434Z [err]      at afterLoad (node:internal/modules/esm/loader:612:29)
+2026-06-24T07:55:05.150308270Z [err]      at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:617:12)
+2026-06-24T07:55:05.150314250Z [err]      at #createModuleJob (node:internal/modules/esm/loader:640:36)
+2026-06-24T07:55:05.150317265Z [err]      at #getJobFromResolveResult (node:internal/modules/esm/loader:353:34)
+2026-06-24T07:55:05.150320273Z [err]      at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:321:41)
+2026-06-24T07:55:05.150323039Z [err]      at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:680:25)
+2026-06-24T07:55:05.150325705Z [err]  
+2026-06-24T07:55:05.150328508Z [err]  Node.js v22.22.3
+2026-06-24T07:55:06.080055441Z [err]  file:///app/deploy.mjs:111
+2026-06-24T07:55:06.080063264Z [err]  }
+2026-06-24T07:55:06.080066865Z [err]  ^
+2026-06-24T07:55:06.080070546Z [err]  
+2026-06-24T07:55:06.080073666Z [err]  SyntaxError: Missing catch or finally after try
+2026-06-24T07:55:06.080076615Z [err]      at compileSourceTextModule (node:internal/modules/esm/utils:346:16)
+2026-06-24T07:55:06.080083204Z [err]      at ModuleLoader.moduleStrategy (node:internal/modules/esm/translators:110:18)
+2026-06-24T07:55:06.080086421Z [err]      at #translate (node:internal/modules/esm/loader:559:20)
+2026-06-24T07:55:06.080089453Z [err]      at afterLoad (node:internal/modules/esm/loader:612:29)
+2026-06-24T07:55:06.080092451Z [err]      at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:617:12)
+2026-06-24T07:55:06.080095516Z [err]      at #createModuleJob (node:internal/modules/esm/loader:640:36)
+2026-06-24T07:55:06.080098642Z [err]      at #getJobFromResolveResult (node:internal/modules/esm/loader:353:34)
+2026-06-24T07:55:06.080103347Z [err]      at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:321:41)
+2026-06-24T07:55:06.080106073Z [err]      at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:680:25)
+2026-06-24T07:55:06.080109495Z [err]  
+2026-06-24T07:55:06.080112708Z [err]  Node.js v22.22.3
+2026-06-24T07:55:07.060503415Z [err]      at #createModuleJob (node:internal/modules/esm/loader:640:36)
+2026-06-24T07:55:07.060510068Z [err]      at #getJobFromResolveResult (node:internal/modules/esm/loader:353:34)
+2026-06-24T07:55:07.060514071Z [err]      at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:321:41)
+2026-06-24T07:55:07.060517500Z [err]      at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:680:25)
+2026-06-24T07:55:07.060520579Z [err]  
+2026-06-24T07:55:07.060524208Z [err]  Node.js v22.22.3
+2026-06-24T07:55:07.060530756Z [err]  file:///app/deploy.mjs:111
+2026-06-24T07:55:07.060537923Z [err]  }
+2026-06-24T07:55:07.060541533Z [err]  ^
+2026-06-24T07:55:07.060545951Z [err]  
+2026-06-24T07:55:07.060550068Z [err]  SyntaxError: Missing catch or finally after try
+2026-06-24T07:55:07.060554112Z [err]      at compileSourceTextModule (node:internal/modules/esm/utils:346:16)
+2026-06-24T07:55:07.060557470Z [err]      at ModuleLoader.moduleStrategy (node:internal/modules/esm/translators:110:18)
+2026-06-24T07:55:07.060560778Z [err]      at #translate (node:internal/modules/esm/loader:559:20)
+2026-06-24T07:55:07.060569099Z [err]      at afterLoad (node:internal/modules/esm/loader:612:29)
+2026-06-24T07:55:07.060572793Z [err]      at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:617:12)
+2026-06-24T07:55:07.983880028Z [err]  
+2026-06-24T07:55:07.983889534Z [err]  SyntaxError: Missing catch or finally after try
+2026-06-24T07:55:07.983895571Z [err]      at compileSourceTextModule (node:internal/modules/esm/utils:346:16)
+2026-06-24T07:55:07.983900843Z [err]      at ModuleLoader.moduleStrategy (node:internal/modules/esm/translators:110:18)
+2026-06-24T07:55:07.983907061Z [err]      at #translate (node:internal/modules/esm/loader:559:20)
+2026-06-24T07:55:07.983913247Z [err]      at afterLoad (node:internal/modules/esm/loader:612:29)
+2026-06-24T07:55:07.983918271Z [err]      at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:617:12)
+2026-06-24T07:55:07.983923907Z [err]      at #createModuleJob (node:internal/modules/esm/loader:640:36)
+2026-06-24T07:55:07.983929553Z [err]      at #getJobFromResolveResult (node:internal/modules/esm/loader:353:34)
+2026-06-24T07:55:07.983934956Z [err]      at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:321:41)
+2026-06-24T07:55:07.983940694Z [err]      at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:680:25)
+2026-06-24T07:55:07.983948805Z [err]  
+2026-06-24T07:55:07.983954183Z [err]  Node.js v22.22.3
+2026-06-24T07:55:07.983969739Z [err]  file:///app/deploy.mjs:111
+2026-06-24T07:55:07.983973540Z [err]  }
+2026-06-24T07:55:07.983977338Z [err]  ^
+2026-06-24T07:55:08.991392686Z [err]  file:///app/deploy.mjs:111
+2026-06-24T07:55:08.991395910Z [err]  }
+2026-06-24T07:55:08.991400303Z [err]  ^
+2026-06-24T07:55:08.991404493Z [err]  
+2026-06-24T07:55:08.991408159Z [err]  SyntaxError: Missing catch or finally after try
+2026-06-24T07:55:08.991412469Z [err]      at compileSourceTextModule (node:internal/modules/esm/utils:346:16)
+2026-06-24T07:55:08.991415481Z [err]      at ModuleLoader.moduleStrategy (node:internal/modules/esm/translators:110:18)
+2026-06-24T07:55:08.991418897Z [err]      at #translate (node:internal/modules/esm/loader:559:20)
+2026-06-24T07:55:08.991422022Z [err]      at afterLoad (node:internal/modules/esm/loader:612:29)
+2026-06-24T07:55:08.991424878Z [err]      at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:617:12)
+2026-06-24T07:55:08.991430542Z [err]      at #createModuleJob (node:internal/modules/esm/loader:640:36)
+2026-06-24T07:55:08.991433585Z [err]      at #getJobFromResolveResult (node:internal/modules/esm/loader:353:34)
+2026-06-24T07:55:08.991436997Z [err]      at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:321:41)
+2026-06-24T07:55:08.991439854Z [err]      at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:680:25)
+2026-06-24T07:55:08.991443169Z [err]  
+2026-06-24T07:55:08.991445958Z [err]  Node.js v22.22.3

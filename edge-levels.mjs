@@ -4,13 +4,7 @@
 //  Filters choppy zones, only alerts on "edge" levels
 // ──────────────────────────────────────────────────
 
-const KLINE_URL = 'https://api.binance.com/api/v3/klines';
-
-async function fetchKlines(symbol, interval, limit = 200) {
-  const res = await fetch(`${KLINE_URL}?symbol=${symbol}&interval=${interval}&limit=${limit}`);
-  if (!res.ok) throw new Error(`${symbol}: ${res.status}`);
-  return (await res.json()).map(k => ({ t: k[0], o: +k[1], h: +k[2], l: +k[3], c: +k[4], v: +k[5] }));
-}
+import { fetchKlines } from './twelvedata.mjs';
 
 // ─── Find swing points with impact analysis ────
 function findSwingPoints(klines, window = 5) {

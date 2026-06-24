@@ -8,6 +8,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { spawn } from 'child_process';
 import { WebSocket } from 'ws';
+import { fetchKlines, fetchTicker } from './twelvedata.mjs';
 import { analyzeOptionSelling, formatDeltaAlert } from './delta.mjs';
 import { analyzeAllCommodities, formatCommodityAlert } from './commodities.mjs';
 import { computeEdgeLevels, isNearEdgeLevel, formatEdgeAlert } from './edge-levels.mjs';
@@ -135,11 +136,8 @@ function rustCall(action, data) {
 startEngine();
 
 // ─── Data Fetchers ────────────────────────────
-async function fetchKlines(symbol, interval = '1h', limit = 200) {
-  const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`);
-  if (!res.ok) throw new Error(`${symbol}: ${res.status}`);
-  return (await res.json()).map(k => ({ t: k[0], o: +k[1], h: +k[2], l: +k[3], c: +k[4], v: +k[5] }));
-}
+// klines now use Twelve Data (imported above)
+// Binance fallbacks for order book + trades (not rate-limited)
 
 async function fetchBook(symbol, limit = 50) {
   const res = await fetch(`https://api.binance.com/api/v3/depth?symbol=${symbol}&limit=${limit}`);

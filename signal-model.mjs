@@ -5,57 +5,7 @@
 // ──────────────────────────────────────────────────
 
 import { computeEdgeLevels, isNearEdgeLevel } from './edge-levels.mjs';
-
-const KLINE_URL = 'https://api.binance.com/api/v3/klines';
-const TICKER_URL = 'https://api.binance.com/api/v3/ticker/24hr';
-
-async function fetchKlines(symbol, interval, limit = 200) {
-  const res = await fetch(`${KLINE_URL}?symbol=${symbol}&interval=${interval}&limit=${limit}`);
-  if (!res.ok) throw new Error(`${symbol}: ${res.status}`);
-  return (await res.json()).map(k => ({ t: k[0], o: +k[1], h: +k[2], l: +k[3], c: +k[4], v: +k[5] }));
-}
-
-async function fetchTicker(symbol) {
-  const res = await fetch(`${TICKER_URL}?symbol=${symbol}`);
-  if (!res.ok) return null;
-  const d = await res.json();
-  return { price: +d.lastPrice, chg: +d.priceChangePercent, high: +d.highPrice, low: +d.lowPrice, vol: +d.quoteVolume };
-}
-
-function calcEMA(data, period) {
-  const r = []; const mult = 2 / (period + 1);
-  let prev = data.slice(0, period).reduce((a, b) => a + b, 0) / period;
-  for (let i = 0; i < data.length; i++) {
-    if (i < period - 1) { r.push(null); continue; }
-    if (i === period - 1) { r.push(prev); continue; }
-    prev = (data[i] - prev) * mult + prev; r.push(prev);
-  }
-  return r;
-}
-
-function calcRSI(data, period = 14) {
-  const r = []; let avgG = 0, avgL = 0;
-  for (let i = 0; i < data.length; i++) {
-    if (i < period) { r.push(null); continue; }
-    if (i === period) {
-      let g = 0, l = 0;
-      for (let j = i - period + 1; j <= i; j++) {
-        const d = data[j] - data[j - 1];
-        if (d > 0) g += d; else l -= d;
-      }
-      avgG = g / period; avgL = l / period;
-    } else {
-      const d = data[i] - data[i - 1];
-      avgG = ((avgG * (period - 1)) + (d > 0 ? d : 0)) / period;
-      avgL = ((avgL * (period - 1)) + (d < 0 ? -d : 0)) / period;
-    }
-    if (avgL === 0) { r.push(100); continue; }
-    r.push(100 - 100 / (1 + avgG / avgL));
-  }
-  return r;
-}
-
-function round(n, d = 2) { return Math.round(n * 10 ** d) / 10 ** d; }
+import { fetchKlines, fetchTicker } from './twelvedata.mjs';\n\nfunction round(n, d = 2) { return Math.round(n * 10 ** d) / 10 ** d; }
 
 // ─── MAIN: Unified Signal Model ────────────────
 export async function computeUnifiedSignal(symbol, externalData = {}) {
