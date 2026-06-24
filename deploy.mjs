@@ -328,104 +328,23 @@ function strengthStars(touches) {
 async function refreshAnalysis() {
   for (const pair of MONITORED) {
     try {
-      // Fetch multiple timeframes
-      const [k1h, k4h, k1d] = await Promise.all([
-        fetchKlines(pair, '1h', 200),
-        fetchKlines(pair, '4h', 200),
-        fetchKlines(pair, '1d', 200),
-      ]);
+      // Compute edge levels (includes klines fetch internally)
+      edgeLevels[pair] = await computeEdgeLevels(pair);
+      const price = edgeLevels[pair]?.price || 0;
+      console.log(`  Edge levels computed for ${pair}`);
 
-      const price = k1h[k1h.length - 1]?.c || 0;
-      if (!price) continue;
-
-      // Multi-timeframe levels
-      const hourly = findLevels(k1h, 'H');
-      const daily4h = findLevels(k4h, 'D');
-      const daily = findLevels(k1d, 'D');
-      const weekly = findLevels(k1d.slice(-50), 'W');
-      const monthly = findLevels(k1d, 'M');
-
-      // Combine all S/R (deduplicate by proximity)
-      const allSupports = [...hourly.supports, ...daily.supports, ...weekly.supports, ...monthly.supports]
-        .filter(l => l.price < price)
-        .sort((a, b) => b.price - a.price);
-      const allResistances = [...hourly.resistances, ...daily.resistances, ...weekly.resistances, ...monthly.resistances]
-        .filter(l => l.price > price)
-        .sort((a, b) => a.price - b.price);
-
-      function dedupe(arr, maxCount) {
-        const r = [];
-        for (const l of arr) {
-          if (r.some(x => Math.abs(x.price - l.price) / l.price < 0.005)) continue;
-          r.push({ ...l, distPct: round((l.price / price - 1) * 100, 2), stars: strengthStars(l.touches) });
+      // Compute unified signal (includes klines fetch internally)
+      const signal = await computeUnifiedSignal(pair, { edgeLevels: edgeLevels[pair] });
+      if (signal.summary && !signal.error) {
+        lastSignals[pair] = { signal: signal.signal, score: signal.score, price, time: Date.now() };
+        indicators[pair] = { rsi: signal.indicators?.rsi, regime: signal.structure?.isChoppy ? 'RANGE' : 'TREND' };
+        if (signal.summary !== lastAlertMsg[pair]) {
+          await sendAlert(signal.summary, signal.signal !== 'NEUTRAL' ? 'high' : 'medium');
+          lastAlertMsg[pair] = signal.summary;
+          console.log(`  Signal sent: ${pair} ${signal.signal} ${signal.score}`);
         }
-        return r.slice(0, maxCount);
       }
-
-      // VWAP & EMA
-      const closes = k1h.map(k => k.c);
-      let cumPV = 0, cumVol = 0;
-      for (const k of k1h) { cumPV += (k.h + k.l + k.c) / 3 * k.v; cumVol += k.v; }
-      const vwap = cumVol > 0 ? cumPV / cumVol : price;
-      const ema20 = calcEMA20(closes);
-
-      // Range detection
-      const recent20 = k1h.slice(-20);
-      const rHigh = Math.max(...recent20.map(k => k.h));
-      const rLow = Math.min(...recent20.map(k => k.l));
-      const rangePct = (rHigh - rLow) / rLow * 100;
-      const isChoppy = rangePct < 5 && rangePct > 0.5;
-
-      keyLevels[pair] = {
-        supports: dedupe(allSupports, 3),
-        resistances: dedupe(allResistances, 3),
-        vwap: round(vwap, 2),
-        ema20: round(ema20[ema20.length - 1], 2),
-        rangePct: round(rangePct, 2),
-        rangeHigh: round(rHigh, 2),
-        rangeLow: round(rLow, 2),
-        isChoppy,
-      };
-
-      // Compute edge levels (high-impact key levels)
-      try {
-        edgeLevels[pair] = await computeEdgeLevels(pair);
-        console.log(`  Edge levels computed for ${pair}`);
-      } catch (e) {
-        console.log(`  Edge levels failed for ${pair}: ${e.message}`);
-        edgeLevels[pair] = null;
-      }
-
-      // Fetch full analysis for signal
-      const res = await fetch(`http://localhost:${PORT}/api/analyze/${pair}`).then(r => r.json());
-      if (!res || res.error) continue;
-
-      const rsi = res.features?.features?.positive_ratio || 50;
-      const regime = res.regimes?.regimeLabel || 'NORMAL';
-      const probUp = res.bayesian?.probUp1d || 50;
-      const probDown = res.bayesian?.probDown1d || 50;
-      const imb = res.orderflow?.tradeImbalance || 0;
-      const volRatio = res.features?.features?.volume_trend_10v10 || 1;
-
-      let score = 0;
-      if (regime.includes('TRENDING')) score += 8;
-      score += (probUp - 50) * 0.6;
-      score += imb * 0.2;
-
-      let signal = 'NEUTRAL';
-      if (score >= 18) signal = 'BUY';
-      else if (score <= -18) signal = 'SELL';
-
-      const prev = lastSignals[pair];
-      lastSignals[pair] = { signal, score: round(score, 1), price, time: Date.now() };
-
-      indicators[pair] = { rsi: round(rsi, 1), regime, probUp, probDown, imb: round(imb, 1), volRatio: round(volRatio, 2) };
-
-      // Signal change → Telegram alert
-      if (prev && prev.signal !== signal) {
-        await sendSignalAlert(pair, signal, score, price);
-      }
-    } catch (_) {}
+    } catch (e) { console.log(`  Analysis failed for ${pair}: ${e.message}`); }
   }
 }
 
@@ -469,37 +388,17 @@ function calcEMA20(data) {
   return r;
 }
 
-// ─── 10-Second Unified Signal ──────────────────
+// ─── 10-Second Lightweight Display ────────────
 async function priceCheck() {
   const now = Date.now();
   for (const pair of MONITORED) {
     const px = livePrices[pair];
-    if (!px || !edgeLevels[pair]) continue;
-
-    try {
-      const result = await computeUnifiedSignal(pair, { edgeLevels: edgeLevels[pair] });
-      if (result.error) continue;
-
-      const price = px.price;
-      const label = pair.replace('USDT', '');
-      const chgStr = px.chg24h >= 0 ? `+${px.chg24h.toFixed(2)}%` : `${px.chg24h.toFixed(2)}%`;
-
-      // Console: always show
-      console.log(`${new Date().toLocaleTimeString()} | ${label.padEnd(6)} $${price.toFixed(2)} ${chgStr}  ${result.signal} ${result.score > 0 ? '+' : ''}${result.score}  RSI:${result.indicators?.rsi || '--'}`);
-
-      // Telegram: ONE consolidated alert every 60 seconds
-      const cooldown = alertCooldown[pair];
-      if (cooldown && now - cooldown < 60000) continue;
-
-      const prevSummary = lastAlertMsg[pair];
-      if (result.summary && result.summary !== prevSummary) {
-        await sendAlert(result.summary, result.signal !== 'NEUTRAL' ? 'high' : 'medium');
-        alertCooldown[pair] = now;
-        lastAlertMsg[pair] = result.summary;
-      }
-    } catch (e) {
-      // silent retry next cycle
-    }
+    if (!px) continue;
+    const sig = lastSignals[pair];
+    const label = pair.replace('USDT', '');
+    const chgStr = px.chg24h !== undefined ? `${px.chg24h >= 0 ? '+' : ''}${typeof px.chg24h === 'number' ? px.chg24h.toFixed(2) : px.chg24h}%` : '--';
+    const sigStr = sig ? `${sig.signal} ${sig.score > 0 ? '+' : ''}${sig.score}` : '--';
+    console.log(`${new Date().toLocaleTimeString()} | ${label.padEnd(6)} $${px.price?.toFixed(2) || '--'} ${chgStr}  ${sigStr}`);
   }
 }
 
@@ -529,8 +428,8 @@ async function main() {
   // 10-second price + S/R checks
   setInterval(priceCheck, 10000);
 
-  // 5-minute full analysis refresh
-  setInterval(refreshAnalysis, 5 * 60 * 1000);
+  // 30-minute full analysis refresh (saves API calls)
+  setInterval(refreshAnalysis, 30 * 60 * 1000);
 
   // Delta Exchange options check every 30 min
   async function deltaCheck() {
